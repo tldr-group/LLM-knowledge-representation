@@ -1,0 +1,51 @@
+Element Name,Atomic Number,Symbol,Atomic Mass,Electron Configuration,Electronegativity,Oxidation States,Group,Period,Is Metal,Next Period,Category2,Category,Random,Random_group,Number
+Hydrogen,1,H,1.008,1s1,2.2,1,1,1,0,3.0,Non-metal,Non-metal,10,2,one
+Helium,2,He,4.0026,1s2,,0,18,1,0,10.0,Noble gas,Noble gas,32,13,two
+Lithium,3,Li,6.94,[He] 2s1,0.98,1,1,2,1,11.0,Metal,Alkali metal,16,9,three
+Beryllium,4,Be,9.0122,[He] 2s2,1.57,2,2,2,1,12.0,Metal,Alkaline earth metal,12,15,four
+Boron,5,B,10.81,[He] 2s2 2p1,2.04,3,13,2,0,13.0,Non-metal,Metalloid,44,13,five
+Carbon,6,C,12.011,[He] 2s2 2p2,2.55,4,14,2,0,14.0,Non-metal,Non-metal,27,16,six
+Nitrogen,7,N,14.007,[He] 2s2 2p3,3.04,3,15,2,0,15.0,Non-metal,Non-metal,45,13,seven
+Oxygen,8,O,15.999,[He] 2s2 2p4,3.44,-2,16,2,0,16.0,Non-metal,Non-metal,21,7,eight
+Fluorine,9,F,18.998,[He] 2s2 2p5,3.98,-1,17,2,0,17.0,Halogen,Halogen,26,5,nine
+Neon,10,Ne,20.18,[He] 2s2 2p6,,0,18,2,0,18.0,Noble gas,Noble gas,13,15,ten
+Sodium,11,Na,22.99,[Ne] 3s1,0.93,1,1,3,1,19.0,Metal,Alkali metal,2,14,eleven
+Magnesium,12,Mg,24.305,[Ne] 3s2,1.31,2,2,3,1,20.0,Metal,Alkaline earth metal,44,12,twelve
+Aluminum,13,Al,26.982,[Ne] 3s2 3p1,1.61,3,13,3,1,31.0,Metal,Post-transition metal,24,15,thirteen
+Silicon,14,Si,28.085,[Ne] 3s2 3p2,1.9,4,14,3,0,32.0,Non-metal,Metalloid,7,10,fourteen
+Phosphorus,15,P,30.974,[Ne] 3s2 3p3,2.19,3,15,3,0,33.0,Non-metal,Non-metal,20,11,fifteen
+Sulfur,16,S,32.06,[Ne] 3s2 3p4,2.58,2,16,3,0,34.0,Non-metal,Non-metal,12,4,sixteen
+Chlorine,17,Cl,35.45,[Ne] 3s2 3p5,3.16,-1,17,3,0,35.0,Halogen,Halogen,40,16,seventeen
+Argon,18,Ar,39.948,[Ne] 3s2 3p6,,0,18,3,0,36.0,Noble gas,Noble gas,34,17,eighteen
+Potassium,19,K,39.098,[Ar] 4s1,0.82,1,1,4,1,37.0,Metal,Alkali metal,32,8,nineteen
+Calcium,20,Ca,40.078,[Ar] 4s2,1.0,2,2,4,1,38.0,Metal,Alkaline earth metal,18,12,twenty
+Scandium,21,Sc,44.956,[Ar] 3d1 4s2,1.36,3,3,4,1,39.0,Metal,Transition metal,11,18,twenty-one
+Titanium,22,Ti,47.867,[Ar] 3d2 4s2,1.54,4,4,4,1,40.0,Metal,Transition metal,22,5,twenty-two
+Vanadium,23,V,50.942,[Ar] 3d3 4s2,1.63,5,5,4,1,41.0,Metal,Transition metal,2,18,twenty-three
+Chromium,24,Cr,51.996,[Ar] 3d5 4s1,1.66,2,6,4,1,42.0,Metal,Transition metal,5,13,twenty-four
+Manganese,25,Mn,54.938,[Ar] 3d5 4s2,1.55,7,7,4,1,43.0,Metal,Transition metal,46,6,twenty-five
+Iron,26,Fe,55.845,[Ar] 3d6 4s2,1.83,2,8,4,1,44.0,Metal,Transition metal,18,1,twenty-six
+Cobalt,27,Co,58.933,[Ar] 3d7 4s2,1.88,3,9,4,1,45.0,Metal,Transition metal,23,10,twenty-seven
+Nickel,28,Ni,58.693,[Ar] 3d8 4s2,1.91,2,10,4,1,46.0,Metal,Transition metal,11,1,twenty-eight
+Copper,29,Cu,63.546,[Ar] 3d10 4s1,1.9,2,11,4,1,47.0,Metal,Transition metal,49,7,twenty-nine
+Zinc,30,Zn,65.38,[Ar] 3d10 4s2,1.65,2,12,4,1,48.0,Metal,Transition metal,3,2,thirty
+Gallium,31,Ga,69.723,[Ar] 3d10 4s2 4p1,1.81,3,13,4,1,49.0,Metal,Post-transition metal,50,1,thirty-one
+Germanium,32,Ge,72.63,[Ar] 3d10 4s2 4p2,2.01,4,14,4,1,50.0,Metal,Metalloid,49,8,thirty-two
+Arsenic,33,As,74.922,[Ar] 3d10 4s2 4p3,2.18,5,15,4,0,,Non-metal,Metalloid,23,4,thirty-three
+Selenium,34,Se,78.971,[Ar] 3d10 4s2 4p4,2.55,-2,16,4,0,,Non-metal,Non-metal,17,11,thirty-four
+Bromine,35,Br,79.904,[Ar] 3d10 4s2 4p5,2.96,-1,17,4,0,,Halogen,Halogen,39,9,thirty-five
+Krypton,36,Kr,83.798,[Ar] 3d10 4s2 4p6,,0,18,4,0,,Noble gas,Noble gas,7,2,thirty-six
+Rubidium,37,Rb,85.468,[Kr] 5s1,0.82,1,1,5,1,,Metal,Alkali metal,15,18,thirty-seven
+Strontium,38,Sr,87.62,[Kr] 5s2,0.95,2,2,5,1,,Metal,Alkaline earth metal,32,18,thirty-eight
+Yttrium,39,Y,88.906,[Kr] 4d1 5s2,1.22,3,3,5,1,,Metal,Transition metal,6,2,thirty-nine
+Zirconium,40,Zr,91.224,[Kr] 4d2 5s2,1.33,4,4,5,1,,Metal,Transition metal,32,3,forty
+Niobium,41,Nb,92.906,[Kr] 4d4 5s1,1.6,5,5,5,1,,Metal,Transition metal,44,1,forty-one
+Molybdenum,42,Mo,95.95,[Kr] 4d5 5s1,2.16,6,6,5,1,,Metal,Transition metal,47,16,forty-two 
+Technetium,43,Tc,98.0,[Kr] 4d5 5s2,,7,7,5,1,,Metal,Transition metal,34,14,forty-three
+Ruthenium,44,Ru,101.07,[Kr] 4d7 5s1,2.2,8,8,5,1,,Metal,Transition metal,1,6,forty-four
+Rhodium,45,Rh,102.91,[Kr] 4d8 5s1,2.28,3,9,5,1,,Metal,Transition metal,33,17,forty-five
+Palladium,46,Pd,106.42,[Kr] 4d10,2.2,2,10,5,1,,Metal,Transition metal,29,1,forty-six
+Silver,47,Ag,107.87,[Kr] 4d10 5s1,1.93,1,11,5,1,,Metal,Transition metal,31,14,forty-seven
+Cadmium,48,Cd,112.41,[Kr] 4d10 5s2,1.69,2,12,5,1,,Metal,Post-transition metal,7,14,forty-eight
+Indium,49,In,114.82,[Kr] 4d10 5s2 5p1,1.78,3,13,5,1,,Metal,Post-transition metal,25,3,forty-nine
+Tin,50,Sn,118.71,[Kr] 4d10 5s2 5p2,1.96,4,14,5,1,,Metal,Post-transition metal,37,17,fifty
