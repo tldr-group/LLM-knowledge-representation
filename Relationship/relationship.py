@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
 # --------------------------
-# 1. 配置
+# 1. Configuration
 # --------------------------
 NUM_LAYERS = 80
 START_LAYER = 1
@@ -66,7 +66,7 @@ def load_activation(file_path):
     return tensor.numpy()
 
 # --------------------------
-# 2. 主逻辑 - 计算并保存结果
+# 2. calculate R²
 # --------------------------
 results = []
 
@@ -81,21 +81,21 @@ for pair_name, templates in DATA_PAIRS.items():
             if X.shape[0] != Y.shape[0]:
                 raise ValueError(f"Layer {layer}: Sample size mismatch.")
 
-            # 对 X 做 PCA
+            # X: PCA
             pipeline_x = Pipeline([
                 ('scaler', StandardScaler()),
                 ('pca', PCA(n_components=PCA_COMPONENTS_X))
             ])
             X_pca = pipeline_x.fit_transform(X)
 
-            # 对 Y 做 PCA（和上面类似）
+            # Y:PCA
             pipeline_y = Pipeline([
                 ('scaler', StandardScaler()),
                 ('pca', PCA(n_components=PCA_COMPONENTS_X))
             ])
             Y_pca = pipeline_y.fit_transform(Y)
 
-            # 线性模型+交叉验证
+            # Linear regression
             model_linear = Pipeline([
                 ('scaler', StandardScaler()),
                 ('regressor', LinearRegression())
@@ -110,13 +110,13 @@ for pair_name, templates in DATA_PAIRS.items():
         except Exception as e:
             print(f"Error in {pair_name}, layer {layer}: {e}")
 
-# 将结果写入 CSV
+
 df_results = pd.DataFrame(results, columns=["pair", "layer", "r2"])
 df_results.to_csv(RESULT_CSV, index=False)
 print(f"Results saved to {RESULT_CSV}")
 
 # --------------------------
-# 3. 读取 CSV 并绘图
+# 3. Plot R²
 # --------------------------
 df_plot = pd.read_csv(RESULT_CSV)
 pairs_in_data = df_plot["pair"].unique()

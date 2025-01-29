@@ -101,7 +101,7 @@ def plot_multiple_cosine_similarity_distributions(n_values: list, num_vectors: i
         plt.legend(fontsize=12)
         
     # Add a global title for the entire figure
-    plt.suptitle('Distribution of Cosine Similarities Between Randomly Sampled Vectors in n-Dimensional Space', fontsize=16)
+    # plt.suptitle('Distribution of Cosine Similarities Between Randomly Sampled Vectors in n-Dimensional Space', fontsize=16)
 
     # Adjust layout and save the final plot
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the layout to make space for the suptitle
@@ -122,7 +122,7 @@ num_samples = 100000     # Number of random pairs to sample
 num_bins = 50            # Number of bins for the histogram
 
 # Output directory for saving the plot
-output_dir = 'Results_cosine_similarity/random'
+output_dir = 'Results/cosine_similarity'
 
 # ------------------ Main Logic ------------------ #
 # Plot and save cosine similarity distributions for different dimensionalities (n_values)
