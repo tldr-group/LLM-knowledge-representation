@@ -6,7 +6,6 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
 import numpy as np
-import imageio
 import re
 
 # ============================
@@ -22,10 +21,7 @@ GIF_OUTPUT = 'tsne_visualization.gif'
 # Visualization Settings
 NUM_SYMBOLS = 50  # Number of elements to load
 ACTIVATIONS_PER_SYMBOL = 11  # Number of activations per element
-# FEATURES_TO_USE = [None, 'Atomic Number', 'Group', 'Electronegativity',"Atomic Mass","Period","Category2"]  # Features to visualize
-FEATURES_TO_USE = [None, 'Atomic Number', 'Group',"Period","Category"]  # Features to visualize
-# FEATURES_TO_USE = [None, 'weekday']  # Features to visualize
-# SELECTED_LAYERS = [0,19,49,79]  # Specify list of layer numbers to include, e.g., [33]. Set to None to include all layers.
+FEATURES_TO_USE = ['Atomic Number', 'Group',"Period","Category"]  # Features to visualize
 SELECTED_LAYERS = [0,49,79]  # Specify list of layer numbers to include, e.g., [33]. Set to None to include all layers.
 
 # Plot Settings
@@ -146,54 +142,36 @@ def assign_colors_to_categories(categories):
     return category_colors, unique_categories
 
 def plot_tsne_with_metrics(tsne_data, pca_data, labels, features_dict, title, output_path, annotate=False):
-    """
-    Plot the t-SNE visualization with labels, using distinct colors for categorical features
-    and color gradients for continuous features. Computes and annotates Silhouette Score for
-    categorical features.
-    Generates subplots for each feature.
-
-    Parameters:
-    - tsne_data: np.ndarray, shape (n_samples, 2)
-    - pca_data: np.ndarray, shape (n_samples, n_pca_components)
-    - labels: list of str, length n_samples
-    - features_dict: dict, keys are feature names, values are lists of feature values
-    - title: str, title of the plot
-    - output_path: str, path to save the plot
-    - annotate: bool, whether to annotate element symbols
-    """
     num_features = len(features_dict)
-    fig, axes = plt.subplots(1, num_features, figsize=(6 * num_features, 4.6), squeeze=False)
+    fig, axes = plt.subplots(1, num_features, figsize=(6 * num_features, 6), squeeze=False)
 
     for idx, (feature, values) in enumerate(features_dict.items()):
         ax = axes[0, idx]
+        ax.set_aspect('equal', adjustable='box')
+        ax.set_xticks([])
+        ax.set_yticks([])
         is_categorical = isinstance(values[0], str) or isinstance(values[0], bool)
         metric_text = ""
 
         if is_categorical:
-            # Handle categorical features
             category_colors, unique_categories = assign_colors_to_categories(values)
             scatter = ax.scatter(tsne_data[:, 0], tsne_data[:, 1],
                                  s=POINT_SIZE, c=category_colors, marker='o', alpha=0.7)
 
             if annotate:
-                # Annotate only once per element by calculating centroids
                 symbols = list(set(labels))
-                centroids = {}
                 for symbol in symbols:
                     indices = [i for i, lbl in enumerate(labels) if lbl == symbol]
                     centroid = tsne_data[indices].mean(axis=0)
-                    centroids[symbol] = centroid
-                    # ax.annotate(symbol, (centroid[0], centroid[1]),
-                    #             textcoords="offset points", xytext=(0, 5),
-                    #             ha='center', fontsize=ANNOTATE_FONT_SIZE, fontweight='bold')
 
-            # Create a legend for the categories
-            handles = [plt.Line2D([0], [0], marker='o', color='w', label=cat,
-                                  markerfacecolor=category_to_color, markersize=10) 
-                       for cat, category_to_color in zip(unique_categories, plt.cm.rainbow(np.linspace(0, 1, len(unique_categories))))]
-            ax.legend(handles=handles, title=feature, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=18, title_fontsize=22)
+            # Remove legend title
+            handles = [
+                plt.Line2D([0], [0], marker='o', color='w', label=cat,
+                           markerfacecolor=c, markersize=10)
+                for cat, c in zip(unique_categories, plt.cm.rainbow(np.linspace(0, 1, len(unique_categories))))
+            ]
+            ax.legend(handles=handles, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=12, title="")
 
-            # Compute Silhouette Score
             try:
                 labels_numeric = pd.factorize(values)[0]
                 if len(set(labels_numeric)) > 1:
@@ -201,100 +179,52 @@ def plot_tsne_with_metrics(tsne_data, pca_data, labels, features_dict, title, ou
                     metric_text = f"Silhouette Score: {silhouette_avg:.2f}"
                 else:
                     metric_text = "Silhouette Score: N/A"
-            except Exception as e:
+            except:
                 metric_text = "Silhouette Score: N/A"
 
         elif feature is not None:
-            # Handle continuous features
             values_array = np.array(values)
-            # Identify non-missing values
             mask = ~pd.isnull(values_array)
             num_missing = np.sum(~mask)
             num_present = np.sum(mask)
-            print(f"Feature '{feature}': {num_present} present, {num_missing} missing values.")
 
             if num_present < 2:
-                print(f"Not enough data points with non-missing '{feature}' for metric computation.")
                 scatter = ax.scatter(tsne_data[:, 0], tsne_data[:, 1],
                                      s=POINT_SIZE, c='gray', marker='o', alpha=0.7)
-                metric_text = ""
             else:
-                # Prepare color mapping, handling missing values
-                # Assign a default color (e.g., gray) to missing values
-                # Plot non-missing and missing separately
                 scatter_present = ax.scatter(tsne_data[mask, 0], tsne_data[mask, 1],
-                                             s=POINT_SIZE, c=values_array[mask], cmap=COLOR_MAP, 
+                                             s=POINT_SIZE, c=values_array[mask], cmap=COLOR_MAP,
                                              norm=plt.Normalize(np.nanmin(values_array[mask]), np.nanmax(values_array[mask])),
-                                             marker='o', alpha=0.7, label='Present')
-                scatter_missing = ax.scatter(tsne_data[~mask, 0], tsne_data[~mask, 1],
-                                             s=POINT_SIZE, c='gray', marker='x', alpha=0.7, label='Missing')
+                                             marker='o', alpha=0.7)
+                ax.scatter(tsne_data[~mask, 0], tsne_data[~mask, 1],
+                           s=POINT_SIZE, c='gray', marker='x', alpha=0.7)
 
-                # To avoid clutter, annotate only once per element by calculating centroids
                 if annotate:
                     symbols = list(set(labels))
-                    centroids = {}
                     for symbol in symbols:
                         indices = [i for i, lbl in enumerate(labels) if lbl == symbol]
                         centroid = tsne_data[indices].mean(axis=0)
-                        centroids[symbol] = centroid
-                        # ax.annotate(symbol, (centroid[0], centroid[1]),
-                        #             textcoords="offset points", xytext=(0, 5),
-                        #             ha='center', fontsize=ANNOTATE_FONT_SIZE, fontweight='bold')
 
-                # Create color bar for the present values
-                # cbar = fig.colorbar(scatter_present, ax=ax, ticks=np.linspace(np.nanmin(values_array[mask]), np.nanmax(values_array[mask]), 6))
-                
-                # cbar.set_label(feature if feature else 'No Feature', fontsize=22)
-                # cbar.ax.tick_params(labelsize=22)
-                cbar = fig.colorbar(scatter_present, ax=ax, 
-                    ticks=np.linspace(np.nanmin(values_array[mask]), np.nanmax(values_array[mask]), 6), 
-                    pad=0.05)
-
-                # 设置 color bar 的标签字体大小
-                cbar.set_label(feature if feature else 'No Feature', fontsize=22)
-
-                # 设置 color bar 的刻度数字字体大小
-                cbar.ax.tick_params(labelsize=14)
-
-
+                # Horizontal colorbar on top, integer ticks
+                cbar = fig.colorbar(scatter_present, ax=ax, orientation='horizontal', pad=0.1)
+                cbar.set_label(feature if feature else '', fontsize=14)
+                cbar.ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
 
         else:
-            # Feature is None; plot without metrics
             scatter = ax.scatter(tsne_data[:, 0], tsne_data[:, 1],
                                  s=POINT_SIZE, c='gray', marker='o', alpha=0.7)
             if annotate:
-                # Annotate only once per element by calculating centroids
                 symbols = list(set(labels))
-                centroids = {}
                 for symbol in symbols:
                     indices = [i for i, lbl in enumerate(labels) if lbl == symbol]
                     centroid = tsne_data[indices].mean(axis=0)
-                    centroids[symbol] = centroid
-                    # ax.annotate(symbol, (centroid[0], centroid[1]),
-                    #             textcoords="offset points", xytext=(0, 5),
-                    #             ha='center', fontsize=ANNOTATE_FONT_SIZE, fontweight='bold')
-            metric_text = ""
 
-        # Annotate the metric on the plot
         if metric_text:
             ax.text(0.95, 0.05, metric_text, transform=ax.transAxes,
-        fontsize=18,  
-        verticalalignment='bottom', horizontalalignment='right',
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.5))
+                    fontsize=12, verticalalignment='bottom', horizontalalignment='right',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.5))
 
-
-        # Title and labels
-        # feature_title = feature if feature else 'No Attribute'
-        # ax.set_title(f"Feature: {feature_title}", fontsize=14)
-        ax.set_xlabel('t-SNE Dimension 1', fontsize=22)
-        ax.set_ylabel('t-SNE Dimension 2', fontsize=22)
-
-
-    # Save and close the plot
-
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.suptitle(title, fontsize=22, y=1.0)
-    plt.savefig(output_path, dpi=300)
+    plt.savefig(output_path, bbox_inches='tight')
     plt.close()
 
 # ============================

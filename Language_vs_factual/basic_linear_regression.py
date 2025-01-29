@@ -26,89 +26,6 @@ class ModelConfig:
 # Example configurations for different models
 MODEL_CONFIGS: List[ModelConfig] = [
 
-    #  ModelConfig(
-    #     name='Llama-3.1-8B',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt',
-    #     num_layers=32
-    # ),
-    
-    # ModelConfig(
-    #     name='Meta-Llama-3.1-70B (description)',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt',
-    #     num_layers=80
-    # ),
-
-    #     ModelConfig(
-    #     name='Llama-2-7b-hf',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates.{layer}.pt',
-    #     num_layers=32
-    # ),
-    # ModelConfig(
-    #     name='Llama-2-7b-hf (question prompt)',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/group question/group question.last.11_templates_questions.{layer}.pt',
-    #     num_layers=32
-    # ),
-   
-    # ModelConfig(
-    #     name='Llama-3.1-8B',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt',
-    #     num_layers=32
-    # ),
-
-    #     ModelConfig(
-    #     name='Llama-3.1-8B (question prompt)',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-3.1-8B/group question/group question.last.11_templates_questions.{layer}.pt',
-    #     num_layers=32  # Example layer count
-    # ),
-
-    #     ModelConfig(
-    #     name='Meta-Llama-3.1-70B',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt',
-    #     num_layers=80  # Example layer count
-    # ),
-
-    #     ModelConfig(
-    #     name='Meta-Llama-3.1-70B (question prompt)',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/group question/group question.last.11_templates_questions.{layer}.pt',
-    #     num_layers=80  # Example layer count
-    # ),
-
-
-
-    # ModelConfig(
-    #     name='Llama-3.1-8B-Instruct',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3-8B-Instruct/atomic number/atomic number.last.11_templates.{layer}.pt',
-    #     num_layers=32  # Example layer count
-    # ),
-
-
-    # ModelConfig(
-    #     name='Llama-2-7b-hf',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates_quesiontions.{layer}.pt',
-    #     num_layers=32
-    # ),
-
-    # ModelConfig(
-    #     name='Llama-2-7b-hf',
-    #     activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/atomic number/atomic number.last.11_templates.{layer}.pt',
-    #     num_layers=32
-    # ),
-    
-
-
-    # ModelConfig(
-    #     name='Meta-Llama-3.1-70B',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number/atomic number.last.11_templates.{layer}.pt',
-    #     num_layers=80  # Example layer count
-    # ),
-
-
-    # ModelConfig(
-    #     name='Meta-Llama-3.1-70B',
-    #     activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/following atomic number/following atomic number.last.11_templates_following.{layer}.pt',
-    #     num_layers=80  # Example layer count
-    # )
-
     ModelConfig(
         name='Llama-2-7b-hf',
         activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/atomic number/atomic number.last.11_templates.{layer}.pt',
@@ -714,5 +631,5 @@ if __name__ == "__main__":
         models=models_to_compare,
         methods=regression_methods,
         split_method='group_shuffle',  # Options: 'middle', 'first', 'group_shuffle'
-        label_column='Random'  # Change to desired label column
+        label_column='Atomic Number'  # Change to desired label column
     )

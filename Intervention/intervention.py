@@ -57,7 +57,7 @@ CONFIG = {
     'hf_token': "<YOUR_HF_TOKEN_HERE>",  # Replace with your Hugging Face token
 
     # Original Logits Path
-    'original_logits_path': 'logits_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number_single/atomic number_single.last.1_templates.last_token_logits.pt',
+    'original_logits_path': 'logits_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number_single.last.1_templates.last_token_logits.pt',
 }
 
 # ---------------------------- Data Loading and Label Transformation ---------------------------- #

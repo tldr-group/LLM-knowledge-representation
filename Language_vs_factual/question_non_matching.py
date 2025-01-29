@@ -210,12 +210,12 @@ def train_model(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_
 # ---------------------------- Plotting Functions ---------------------------- #
 
 # COLOR_MAP = {
-#     'Llama-2-7b-hf (question prompt)': '#e377c2',         # 深粉色
-#     'Llama-2-7b-hf (continuation prompt)': '#f7c9e2',     # 浅粉色
-#     'Llama-3.1-8B (question prompt)': '#2ca02c',           # 深绿色
-#     'Llama-3.1-8B (continuation prompt)': '#98df8a',       # 浅绿色
-#     'Meta-Llama-3.1-70B (question prompt)': '#1f77b4',     # 深蓝色
-#     'Meta-Llama-3.1-70B (continuation prompt)': '#aec7e8'  # 浅蓝色
+#     'Llama-2-7b-hf (question prompt)': '#e377c2',         
+#     'Llama-2-7b-hf (continuation prompt)': '#f7c9e2',     
+#     'Llama-3.1-8B (question prompt)': '#2ca02c',           
+#     'Llama-3.1-8B (continuation prompt)': '#98df8a',       
+#     'Meta-Llama-3.1-70B (question prompt)': '#1f77b4',     
+#     'Meta-Llama-3.1-70B (continuation prompt)': '#aec7e8'  
 # }
 
 # STYLE_MAP = {
@@ -301,55 +301,6 @@ def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models:
     fig_legend.savefig(f'{output_dir}/r2_trends_legend_{label_column}.png', dpi=300, bbox_inches='tight')
     plt.close(fig_legend)
 
-# def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], model_pairs: List[Tuple[str, str]], label_column: str):
-#     output_dir = 'Results/non_matching'
-#     os.makedirs(output_dir, exist_ok=True)
-#     plt.figure(figsize=(5, 3))
-#     sns.set(style="whitegrid")
-
-#     # Use the color of the first model in the pair
-#     model_config_dict = {model.name: model for model in models}
-#     legend_handles = []
-
-#     for (model_name1, model_name2) in model_pairs:
-#         r2_scores1 = r2_scores_dict.get(model_name1, [])
-#         r2_scores2 = r2_scores_dict.get(model_name2, [])
-#         if not r2_scores1 or not r2_scores2:
-#             print(f"Warning: Missing R² scores for pair ({model_name1}, {model_name2}).")
-#             continue
-
-#         num_layers1 = model_config_dict[model_name1].num_layers
-#         num_layers2 = model_config_dict[model_name2].num_layers
-#         normalized_layers1 = [layer / num_layers1 for layer in range(len(r2_scores1))]
-#         normalized_layers2 = [layer / num_layers2 for layer in range(len(r2_scores2))]
-#         common_normalized_layers = np.linspace(0, 1, 100)
-
-#         interp_r2_scores1 = np.interp(common_normalized_layers, normalized_layers1, r2_scores1)
-#         interp_r2_scores2 = np.interp(common_normalized_layers, normalized_layers2, r2_scores2)
-#         delta_r2 = interp_r2_scores1 - interp_r2_scores2
-
-#         color_for_pair = COLOR_MAP.get(model_name1, 'gray')
-#         line, = plt.plot(
-#             common_normalized_layers, delta_r2,
-#             marker='o', linestyle='-', color=color_for_pair,
-#             label=f'{model_name1} - {model_name2}', markersize=3, linewidth=1.5
-#         )
-#         legend_handles.append(line)
-
-#     plt.xlabel('Layer Depth Proportion', fontsize=10)
-#     plt.ylabel('Δ R² Score', fontsize=10)
-#     plt.title('R² Difference Between Models Across Normalized Layer Depth', fontsize=12)
-#     plt.grid(True, linestyle='--', linewidth=0.7)
-#     plt.tight_layout()
-#     plt.savefig(f'{output_dir}/r2_difference_between_models_{label_column}.png', dpi=300)
-#     plt.close()
-
-#     # Save the legend separately
-#     fig_legend = plt.figure(figsize=(12, 1))
-#     plt.figlegend(handles=legend_handles, loc='center', fontsize=10, ncol=len(legend_handles)//2)
-#     fig_legend.savefig(f'{output_dir}/r2_difference_legend_{label_column}.png', dpi=300, bbox_inches='tight')
-#     plt.close(fig_legend)
-
 # ---------------------------- Main Orchestration Function ---------------------------- #
 
 def main(models: List[ModelConfig], methods: List[str], split_method: str = 'middle', label_column: str = 'Group'):
@@ -394,12 +345,6 @@ def main(models: List[ModelConfig], methods: List[str], split_method: str = 'mid
             print(f"No valid R² for model: {model.name}")
 
     plot_r2_trends_across_models(r2_scores_dict, models, label_column)
-    # model_pairs_to_compare = [
-    #     ('Meta-Llama-3.1-70B (continuation prompt)', 'Meta-Llama-3.1-70B (question prompt)'),
-    #     ('Llama-3.1-8B (continuation prompt)', 'Llama-3.1-8B (question prompt)'),
-    #     ('Llama-2-7b-hf (continuation prompt)', 'Llama-2-7b-hf (question prompt)')
-    # ]
-    # plot_r2_difference_between_models(r2_scores_dict, models, model_pairs_to_compare, label_column)
 
 if __name__ == "__main__":
     models_to_compare = MODEL_CONFIGS

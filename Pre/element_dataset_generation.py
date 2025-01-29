@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 data = {
     'Element Name': ['Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron', 'Carbon', 'Nitrogen', 'Oxygen', 'Fluorine', 'Neon',
@@ -58,7 +59,7 @@ data = {
                   None, None, None, None, None, None, None, None, 
                   None, None, None, None],
 
-    'Category': [
+    'Category_2': [
     'Non-metal',           # 1. Hydrogen
     'Noble gas',           # 2. Helium
     'Metal',               # 3. Lithium
@@ -111,7 +112,7 @@ data = {
     'Metal'                # 50. Tin
 ],
 
-'Category2': [
+'Category': [
     'Non-metal',           # 1. Hydrogen
     'Noble gas',           # 2. Helium
     'Alkali metal',        # 3. Lithium
@@ -166,70 +167,10 @@ data = {
 ]
 
 
-
-
-            
-    # 'Descriptions':[    
-    #     "the only element without neutrons, fundamental in the universe's formation",  # Hydrogen
-    # "the lightest inert gas, used for lifting and cooling applications",  # Helium
-    # "the lightest metal, used extensively in rechargeable batteries",  # Lithium
-    # "transparent to x-rays and used in aerospace components due to its high strength",  # Beryllium
-    # "essential for borosilicate glass and used in detergents",  # Boron
-    # "the basis of all organic life, forming the backbone of organic molecules",  # Carbon
-    # "the most abundant gas in Earth's atmosphere, critical for plant growth",  # Nitrogen
-    # "highly reactive and essential for respiration in aerobic organisms",  # Oxygen
-    # "the most electronegative element, used in the production of fluoride compounds",  # Fluorine
-    # "emits a characteristic reddish-orange glow when electrically excited",  # Neon
-    # "reacts violently with water, essential in the production of table salt",  # Sodium
-    # "central to the process of photosynthesis as the key element in chlorophyll",  # Magnesium
-    # "the most abundant metal in Earth's crust, used widely in construction and packaging",  # Aluminum
-    # "a key material in semiconductors, essential for modern electronics",  # Silicon
-    # "used in fertilizers and known for glowing in the dark",  # Phosphorus
-    # "an essential element for producing sulfuric acid, the most important industrial chemical",  # Sulfur
-    # "used as a disinfectant in pools and water treatment",  # Chlorine
-    # "an inert gas used in fluorescent lighting and welding",  # Argon
-    # "a vital electrolyte necessary for nerve function and muscle contraction",  # Potassium
-    # "a critical element for bones and teeth, also used in construction",  # Calcium
-    # "used in aerospace applications for its high strength and low density",  # Scandium
-    # "highly corrosion-resistant, used in medical implants and aircraft",  # Titanium
-    # "used in high-strength steel alloys to improve their toughness",  # Vanadium
-    # "used in the production of stainless steel, providing a shiny, durable finish",  # Chromium
-    # "the only metal with a +7 oxidation state, used in battery production",  # Manganese
-    # "the main component of steel, essential in construction and manufacturing",  # Iron
-    # "used in jet engines and magnets, known for its high melting point",  # Cobalt
-    # "used in batteries, coins, and as a corrosion-resistant coating",  # Nickel
-    # "the best conductor of electricity, widely used in electrical wiring",  # Copper
-    # "essential in galvanization to protect steel from corrosion",  # Zinc
-    # "melts near room temperature, used in thermometers and LEDs",  # Gallium
-    # "a key component in fiber optics and infrared optics",  # Germanium
-    # "a toxic metalloid used in semiconductors and pesticides",  # Arsenic
-    # "used in glassmaking and as an antioxidant, important in cellular function",  # Selenium
-    # "the only nonmetal that is a liquid at room temperature, used in flame retardants",  # Bromine
-    # "a noble gas used in photography and high-speed lighting",  # Krypton
-    # "highly reactive with air and water, used in atomic clocks",  # Rubidium
-    # "produces bright red flames in fireworks, used in signal flares",  # Strontium
-    # "used in high-power lasers and in producing red phosphors for color TV tubes",  # Yttrium
-    # "highly resistant to corrosion, used in nuclear reactors and ceramics",  # Zirconium
-    # "essential in superconducting magnets and high-tech alloys",  # Niobium
-    # "a key component in molybdenum steel alloys, used in high-strength steel",  # Molybdenum
-    # "a radioactive metal used in medical imaging and diagnostics",  # Technetium
-    # "used in electrical contacts and solar cells, known for its catalytic properties",  # Ruthenium
-    # "highly reflective and corrosion-resistant, used in jewelry and catalytic converters",  # Rhodium
-    # "absorbs hydrogen and is used in catalytic converters and fuel cells",  # Palladium
-    # "the most reflective metal, widely used in mirrors, coins, and jewelry",  # Silver
-    # "used in nuclear reactors to control neutron absorption",  # Cadmium
-    # "a soft metal used in liquid crystal displays and semiconductors",  # Indium
-    # "used in tin-plating and to prevent corrosion in food packaging" 
-    # ],
-
-
-
 }
 
 lengths = {key: len(value) for key, value in data.items()}
 print(lengths)
-# 转换为DataFrame
 elements_df = pd.DataFrame(data)
 
-# 保存为CSV文件
 elements_df.to_csv('periodic_table_dataset.csv', index=False)

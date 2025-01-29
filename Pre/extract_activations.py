@@ -73,15 +73,10 @@ def get_batch_mask(prompts, tokenizer):
         tuple: input_ids and attention_mask tensors.
     """
     inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-
-    # print("Input IDs:")
-    # print(inputs["input_ids"])
-    # print("Attention Mask:")
-    # print(inputs["attention_mask"])
     
     # Print number of valid tokens per input
-    print("Number of valid tokens per input:")
-    print(inputs["attention_mask"].sum(dim=1))
+    # print("Number of valid tokens per input:")
+    # print(inputs["attention_mask"].sum(dim=1))
     return inputs["input_ids"], inputs["attention_mask"]
 
 # Register activation hooks
@@ -346,328 +341,279 @@ def main():
     model = load_model(model_name, HF_TOKEN)
     
     # Define entity types with their data files and templates
-    # This can be extended as needed
     entities = [
-        # {
-        #     "entity_type": "atomic number",
-        #     "data_file": "periodic_table_dataset.csv",
-            # "templates": [
-            #     "{Element Name} ({Symbol}) has an atomic number of ",
-            #     "The atomic number of {Element Name} ({Symbol}) is ",
-            #     "For {Element Name} ({Symbol}), the atomic number is ",
-            #     "{Element Name} ({Symbol}) has the atomic number ",
-            #     "{Element Name} ({Symbol}) holds an atomic number of ",
-            #     "{Element Name} ({Symbol}) is assigned the atomic number ",
-            #     "For {Element Name} ({Symbol}), it is known that the atomic number is ",
-            #     "In terms of atomic numbers, {Element Name} ({Symbol}) is assigned ",
-            #     "{Element Name} ({Symbol}) has an assigned atomic number of ",
-            #     "The atomic number for {Element Name} ({Symbol}) is known to be ",
-            #     "When it comes to atomic numbers, {Element Name} ({Symbol}) has "
-            # ],
-        #     "prompt_name": "11_templates"
-        # },
-        # {
-        #     "entity_type": "atomic mass",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "{Element Name} ({Symbol}) has an atomic mass of ",
-        #         "The atomic mass of {Element Name} ({Symbol}) is ",
-        #         "For {Element Name} ({Symbol}), the atomic mass is ",
-        #         "{Element Name} ({Symbol}) has the atomic mass ",
-        #         "{Element Name} ({Symbol}) holds an atomic mass of ",
-        #         "{Element Name} ({Symbol}) is assigned the atomic mass ",
-        #         "For {Element Name} ({Symbol}), it is known that the atomic mass is ",
-        #         "In terms of atomic masses, {Element Name} ({Symbol}) is assigned ",
-        #         "{Element Name} ({Symbol}) has an assigned atomic mass of ",
-        #         "The atomic mass for {Element Name} ({Symbol}) is known to be ",
-        #         "When it comes to atomic masses, {Element Name} ({Symbol}) has "
-        #     ],
-        #     "prompt_name": "11_templates"
-        # },
-        # {
-        #     "entity_type": "group",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "{Element Name} ({Symbol}) belongs to group ",
-        #         "The element {Element Name} ({Symbol}) is part of group ",
-        #         "In the periodic table, {Element Name} ({Symbol}) is found in group ",
-        #         "{Element Name} ({Symbol}) is assigned to group ",
-        #         "For {Element Name} ({Symbol}), the group number is ",
-        #         "{Element Name} ({Symbol}) can be classified under group ",
-        #         "When categorized, {Element Name} ({Symbol}) is placed in group ",
-        #         "In terms of groups, {Element Name} ({Symbol}) falls under group ",
-        #         "You will find {Element Name} ({Symbol}) in group ",
-        #         "The group for {Element Name} ({Symbol}) in the periodic table is ",
-        #         "According to the periodic table, {Element Name} ({Symbol}) is in group "
-        #     ],
-        #     "prompt_name": "11_templates"
-        # },
-        # {
-        #     "entity_type": "period",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "{Element Name} ({Symbol}) is located in period ",
-        #         "The element {Element Name} ({Symbol}) belongs to period ",
-        #         "In the periodic table, {Element Name} ({Symbol}) is found in period ",
-        #         "{Element Name} ({Symbol}) falls under period ",
-        #         "{Element Name} ({Symbol}) is assigned to period ",
-        #         "For {Element Name} ({Symbol}), the period number is ",
-        #         "The element {Element Name} ({Symbol}) is categorized under period ",
-        #         "{Element Name} ({Symbol}) can be found in period ",
-        #         "In terms of periods, {Element Name} ({Symbol}) is placed in period ",
-        #         "According to the periodic table, {Element Name} ({Symbol}) is in period ",
-        #         "You will find {Element Name} ({Symbol}) in period "
-        #     ],
-        #     "prompt_name": "11_templates"
-        # },
-        # {
-        #     "entity_type": "electronegativity",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "{Element Name} ({Symbol}) has an electronegativity of ",
-        #         "The element {Element Name} ({Symbol}) has an electronegativity of ",
-        #         "In the periodic table, {Element Name} ({Symbol}) is assigned an electronegativity of ",
-        #         "{Element Name} ({Symbol}) possesses an electronegativity of ",
-        #         "{Element Name} ({Symbol}) is assigned an electronegativity of ",
-        #         "For {Element Name} ({Symbol}), the electronegativity value is ",
-        #         "The element {Element Name} ({Symbol}) has been assigned an electronegativity of ",
-        #         "{Element Name} ({Symbol}) can be found with an electronegativity of ",
-        #         "In terms of electronegativity, {Element Name} ({Symbol}) has a value of ",
-        #         "According to the periodic table, {Element Name} ({Symbol}) has an electronegativity of ",
-        #         "You will find {Element Name} ({Symbol}) with an electronegativity of "
-        #     ],
-        #     "prompt_name": "11_templates"
-        # },
-        # {
-        #     "entity_type": "atomic number question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "What is the atomic number of {Element Name} ({Symbol})?",
-        #         "Do you know the atomic number of {Element Name} ({Symbol})?",
-        #         "Can you tell me the atomic number of {Element Name} ({Symbol})?",
-        #         "What number is {Element Name} ({Symbol}) on the periodic table?",
-        #         "How high is the atomic number of {Element Name} ({Symbol})?",
-        #         "What position does {Element Name} ({Symbol}) hold in atomic number?",
-        #         "Where does {Element Name} ({Symbol}) rank in atomic number?",
-        #         "Do you happen to know {Element Name} ({Symbol})'s atomic number?",
-        #         "Can you guess the atomic number of {Element Name} ({Symbol})?",
-        #         "What's the atomic number of {Element Name} ({Symbol})?",
-        #         "Which atomic number is assigned to {Element Name} ({Symbol})?"
-        #     ],
-        #     "prompt_name": "11_templates_questions"
-        # },
-        # {
-        #     "entity_type": "period question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "Which period is {Element Name} ({Symbol}) located in?",
-        #         "Do you know which period {Element Name} ({Symbol}) belongs to?",
-        #         "In the periodic table, what period is {Element Name} ({Symbol}) found in?",
-        #         "Can you tell me which period {Element Name} ({Symbol}) falls under?",
-        #         "What period is {Element Name} ({Symbol}) assigned to?",
-        #         "For {Element Name} ({Symbol}), what is the period number?",
-        #         "Which period is the element {Element Name} ({Symbol}) categorized under?",
-        #         "Where can {Element Name} ({Symbol}) be found in terms of periods?",
-        #         "What period is {Element Name} ({Symbol}) placed in?",
-        #         "According to the periodic table, which period is {Element Name} ({Symbol}) in?",
-        #         "Can you tell me in which period {Element Name} ({Symbol}) is located?"
-        #     ],
-        #     "prompt_name": "11_templates_questions"
-        # },
+        {
+            "entity_type": "atomic number",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "{Element Name} ({Symbol}) has an atomic number of ",
+                "The atomic number of {Element Name} ({Symbol}) is ",
+                "For {Element Name} ({Symbol}), the atomic number is ",
+                "{Element Name} ({Symbol}) has the atomic number ",
+                "{Element Name} ({Symbol}) holds an atomic number of ",
+                "{Element Name} ({Symbol}) is assigned the atomic number ",
+                "For {Element Name} ({Symbol}), it is known that the atomic number is ",
+                "In terms of atomic numbers, {Element Name} ({Symbol}) is assigned ",
+                "{Element Name} ({Symbol}) has an assigned atomic number of ",
+                "The atomic number for {Element Name} ({Symbol}) is known to be ",
+                "When it comes to atomic numbers, {Element Name} ({Symbol}) has "
+            ],
+            "prompt_name": "11_templates"
+        },
+        {
+            "entity_type": "atomic mass",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "{Element Name} ({Symbol}) has an atomic mass of ",
+                "The atomic mass of {Element Name} ({Symbol}) is ",
+                "For {Element Name} ({Symbol}), the atomic mass is ",
+                "{Element Name} ({Symbol}) has the atomic mass ",
+                "{Element Name} ({Symbol}) holds an atomic mass of ",
+                "{Element Name} ({Symbol}) is assigned the atomic mass ",
+                "For {Element Name} ({Symbol}), it is known that the atomic mass is ",
+                "In terms of atomic masses, {Element Name} ({Symbol}) is assigned ",
+                "{Element Name} ({Symbol}) has an assigned atomic mass of ",
+                "The atomic mass for {Element Name} ({Symbol}) is known to be ",
+                "When it comes to atomic masses, {Element Name} ({Symbol}) has "
+            ],
+            "prompt_name": "11_templates"
+        },
+        {
+            "entity_type": "group",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "{Element Name} ({Symbol}) belongs to group ",
+                "The element {Element Name} ({Symbol}) is part of group ",
+                "In the periodic table, {Element Name} ({Symbol}) is found in group ",
+                "{Element Name} ({Symbol}) is assigned to group ",
+                "For {Element Name} ({Symbol}), the group number is ",
+                "{Element Name} ({Symbol}) can be classified under group ",
+                "When categorized, {Element Name} ({Symbol}) is placed in group ",
+                "In terms of groups, {Element Name} ({Symbol}) falls under group ",
+                "You will find {Element Name} ({Symbol}) in group ",
+                "The group for {Element Name} ({Symbol}) in the periodic table is ",
+                "According to the periodic table, {Element Name} ({Symbol}) is in group "
+            ],
+            "prompt_name": "11_templates"
+        },
+        {
+            "entity_type": "period",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "{Element Name} ({Symbol}) is located in period ",
+                "The element {Element Name} ({Symbol}) belongs to period ",
+                "In the periodic table, {Element Name} ({Symbol}) is found in period ",
+                "{Element Name} ({Symbol}) falls under period ",
+                "{Element Name} ({Symbol}) is assigned to period ",
+                "For {Element Name} ({Symbol}), the period number is ",
+                "The element {Element Name} ({Symbol}) is categorized under period ",
+                "{Element Name} ({Symbol}) can be found in period ",
+                "In terms of periods, {Element Name} ({Symbol}) is placed in period ",
+                "According to the periodic table, {Element Name} ({Symbol}) is in period ",
+                "You will find {Element Name} ({Symbol}) in period "
+            ],
+            "prompt_name": "11_templates"
+        },
+        {
+            "entity_type": "electronegativity",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "{Element Name} ({Symbol}) has an electronegativity of ",
+                "The element {Element Name} ({Symbol}) has an electronegativity of ",
+                "In the periodic table, {Element Name} ({Symbol}) is assigned an electronegativity of ",
+                "{Element Name} ({Symbol}) possesses an electronegativity of ",
+                "{Element Name} ({Symbol}) is assigned an electronegativity of ",
+                "For {Element Name} ({Symbol}), the electronegativity value is ",
+                "The element {Element Name} ({Symbol}) has been assigned an electronegativity of ",
+                "{Element Name} ({Symbol}) can be found with an electronegativity of ",
+                "In terms of electronegativity, {Element Name} ({Symbol}) has a value of ",
+                "According to the periodic table, {Element Name} ({Symbol}) has an electronegativity of ",
+                "You will find {Element Name} ({Symbol}) with an electronegativity of "
+            ],
+            "prompt_name": "11_templates"
+        },
+        {
+            "entity_type": "atomic number question",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "What is the atomic number of {Element Name} ({Symbol})?",
+                "Do you know the atomic number of {Element Name} ({Symbol})?",
+                "Can you tell me the atomic number of {Element Name} ({Symbol})?",
+                "What number is {Element Name} ({Symbol}) on the periodic table?",
+                "How high is the atomic number of {Element Name} ({Symbol})?",
+                "What position does {Element Name} ({Symbol}) hold in atomic number?",
+                "Where does {Element Name} ({Symbol}) rank in atomic number?",
+                "Do you happen to know {Element Name} ({Symbol})'s atomic number?",
+                "Can you guess the atomic number of {Element Name} ({Symbol})?",
+                "What's the atomic number of {Element Name} ({Symbol})?",
+                "Which atomic number is assigned to {Element Name} ({Symbol})?"
+            ],
+            "prompt_name": "11_templates_questions"
+        },
+        {
+            "entity_type": "period question",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "Which period is {Element Name} ({Symbol}) located in?",
+                "Do you know which period {Element Name} ({Symbol}) belongs to?",
+                "In the periodic table, what period is {Element Name} ({Symbol}) found in?",
+                "Can you tell me which period {Element Name} ({Symbol}) falls under?",
+                "What period is {Element Name} ({Symbol}) assigned to?",
+                "For {Element Name} ({Symbol}), what is the period number?",
+                "Which period is the element {Element Name} ({Symbol}) categorized under?",
+                "Where can {Element Name} ({Symbol}) be found in terms of periods?",
+                "What period is {Element Name} ({Symbol}) placed in?",
+                "According to the periodic table, which period is {Element Name} ({Symbol}) in?",
+                "Can you tell me in which period {Element Name} ({Symbol}) is located?"
+            ],
+            "prompt_name": "11_templates_questions"
+        },
         
-        # {
-        #     "entity_type": "group question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "Which group does {Element Name} ({Symbol}) belong to?",
-        #         "Do you know which group {Element Name} ({Symbol}) is part of?",
-        #         "In the periodic table, what group is {Element Name} ({Symbol}) found in?",
-        #         "Can you tell me which group {Element Name} ({Symbol}) is assigned to?",
-        #         "What is the group number for {Element Name} ({Symbol})?",
-        #         "Under which group can {Element Name} ({Symbol}) be classified?",
-        #         "When categorized, in which group is {Element Name} ({Symbol}) placed?",
-        #         "In terms of groups, which group does {Element Name} ({Symbol}) fall under?",
-        #         "Where can you find {Element Name} ({Symbol}) in terms of groups?",
-        #         "What is the group for {Element Name} ({Symbol}) in the periodic table?",
-        #         "According to the periodic table, what group is {Element Name} ({Symbol}) in?"
-        #     ],
-        #     "prompt_name": "11_templates_questions"
-        # },
-        # {
-        #     "entity_type": "atomic mass question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "What is the atomic mass of {Element Name} ({Symbol})?",
-        #         "Do you know the atomic mass of {Element Name} ({Symbol})?",
-        #         "What is the atomic mass for {Element Name} ({Symbol})?",
-        #         "Can you tell me the atomic mass of {Element Name} ({Symbol})?",
-        #         "What atomic mass is assigned to {Element Name} ({Symbol})?",
-        #         "What is the atomic mass value for {Element Name} ({Symbol})?",
-        #         "What is known about the atomic mass of {Element Name} ({Symbol})?",
-        #         "In terms of atomic mass, what is {Element Name} ({Symbol}) assigned?",
-        #         "What atomic mass has been assigned to {Element Name} ({Symbol})?",
-        #         "What is the known atomic mass for {Element Name} ({Symbol})?",
-        #         "When it comes to atomic mass, what value does {Element Name} ({Symbol}) have?"
-        #     ],
-        #     "prompt_name": "11_templates_questions"
-        # },
-        # {
-        #     "entity_type": "electronegativity question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "What is the electronegativity of {Element Name} ({Symbol})?",
-        #         "Do you know the electronegativity of {Element Name} ({Symbol})?",
-        #         "What is the electronegativity assigned to {Element Name} ({Symbol}) in the periodic table?",
-        #         "Can you tell me the electronegativity of {Element Name} ({Symbol})?",
-        #         "What electronegativity value is assigned to {Element Name} ({Symbol})?",
-        #         "What is the electronegativity value for {Element Name} ({Symbol})?",
-        #         "What electronegativity has been assigned to {Element Name} ({Symbol})?",
-        #         "Where can you find {Element Name} ({Symbol}) in terms of electronegativity?",
-        #         "In terms of electronegativity, what value does {Element Name} ({Symbol}) have?",
-        #         "According to the periodic table, what is the electronegativity of {Element Name} ({Symbol})?",
-        #         "Can you find the electronegativity of {Element Name} ({Symbol})?"
-        #     ],
-        #     "prompt_name": "11_templates_questions"
-        # }
-        # {
-        #     "entity_type": "following atomic number",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "In the periodic table, the element directly after {Element Name} ({Symbol}) has an atomic number of ",
-        #         "The atomic number of the element that comes right after {Element Name} ({Symbol}) is ",
-        #         "The atomic number of the element following {Element Name} ({Symbol}) is ",
-        #         "{Element Name} ({Symbol}) is followed by an element with an atomic number of ",
-        #         "In the periodic sequence, the element after {Element Name} ({Symbol}) has an atomic number of ",
-        #         "Just after {Element Name} ({Symbol}), there is an element with an atomic number of ",
-        #         "The element that comes after {Element Name} ({Symbol}) in the periodic table has an atomic number of ",
-        #         "Right after {Element Name} ({Symbol}), the element’s atomic number is ...",
-        #         "After {Element Name} ({Symbol}) in the periodic table, there is an element with an atomic number of ",
-        #         "The element directly following {Element Name} ({Symbol}) has an atomic number of ",
-        #         "The atomic number of the element found just after {Element Name} ({Symbol}) is "
-        #     ],
-        #     "prompt_name": "11_templates_following"
-        # },
-        # {
-        #     "entity_type": "atomic mass difference",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "The atomic mass difference between {Element Name} ({Symbol}) and the previous element is ",
-        #         "The atomic mass of {Element Name} ({Symbol}) differs from that of the preceding element by ",
-        #         "The difference in atomic mass between {Element Name} ({Symbol}) and the element before it is ",
-        #         "The atomic mass difference between {Element Name} ({Symbol}) and the element that precedes it is ",
-        #         "The atomic mass difference between {Element Name} ({Symbol}) and the element just before it is",
-        #         "The atomic mass of {Element Name} ({Symbol}) is different from the element before it by ",
-        #         "The element before {Element Name} ({Symbol}) has an atomic mass difference of ",
-        #         "In the periodic sequence, the atomic mass difference between {Element Name} ({Symbol}) and the element before it is ",
-        #         "Right before {Element Name} ({Symbol}), the atomic mass difference is ...",
-        #         "Before {Element Name} ({Symbol}) in the periodic table, the atomic mass difference between them is ",
-        #         "The difference in atomic mass between {Element Name} ({Symbol}) and the element found just before it is "
-        #     ],
-        #     "prompt_name": "11_templates_atomic_mass_difference"
-        # },
-        # {
-        #     "entity_type": "double atomic mass",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "The atomic mass of {Element Name} ({Symbol}) doubled is  ",
-        #         "Twice the atomic mass of {Element Name} ({Symbol}) is  ",
-        #         "Double the atomic mass of {Element Name} ({Symbol}) gives  ",
-        #         "The atomic mass of {Element Name} ({Symbol}), when multiplied by 2, is  ",
-        #         "Doubling the atomic mass of {Element Name} ({Symbol}) results in  ",
-        #         "The result of doubling the atomic mass of {Element Name} ({Symbol}) is  ",
-        #         "{Element Name} ({Symbol})'s atomic mass, when doubled, equals  ",
-        #         "Multiplying the atomic mass of {Element Name} ({Symbol}) by 2 gives  ",
-        #         "{Element Name} ({Symbol})’s atomic mass times two equals  ",
-        #         "Two times the atomic mass of {Element Name} ({Symbol}) is  ",
-        #         "The value of {Element Name} ({Symbol})'s atomic mass doubled is  "
-        #     ],
-        #     "prompt_name": "11_templates_double_atomic_mass"
-        # },
-        # {
-        #     "entity_type": "square atomic mass",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "The square of the atomic mass of {Element Name} ({Symbol}) is ",
-        #         "The atomic mass of {Element Name} ({Symbol}) squared is ",
-        #         "Squaring the atomic mass of {Element Name} ({Symbol}) gives ",
-        #         "The atomic mass of {Element Name} ({Symbol}), when squared, is ",
-        #         "The result of squaring the atomic mass of {Element Name} ({Symbol}) is ",
-        #         "{Element Name} ({Symbol})'s atomic mass, when squared, equals ",
-        #         "Multiplying the atomic mass of {Element Name} ({Symbol}) by itself gives ",
-        #         "{Element Name} ({Symbol})’s atomic mass times itself equals ",
-        #         "The value of {Element Name} ({Symbol})'s atomic mass squared is ",
-        #         "The atomic mass of {Element Name} ({Symbol}) to the power of two is ",
-        #         "When you square the atomic mass of {Element Name} ({Symbol}), you get "
-        #     ],
-        #     "prompt_name": "11_templates_square_atomic_mass"
-        # },
-        # {
-        #     "entity_type": "atomic number description",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "{Description} corresponds to an atomic number of ",
-        #         "The atomic number associated with {Description} is ",
-        #         "For {Description}, the atomic number is ",
-        #         "{Description} holds an atomic number of ",
-        #         "{Description} is assigned an atomic number of ",
-        #         "It is known that {Description} has an atomic number of ",
-        #         "{Description} has the atomic number ",
-        #         "In terms of atomic numbers, {Description} corresponds to ",
-        #         "When it comes to atomic numbers, {Description} holds ",
-        #         "{Description} has been assigned the atomic number ",
-        #         "The atomic number for {Description} is known to be "
-        #     ],
-        #     "prompt_name": "11_templates"
-        # },
+        {
+            "entity_type": "group question",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "Which group does {Element Name} ({Symbol}) belong to?",
+                "Do you know which group {Element Name} ({Symbol}) is part of?",
+                "In the periodic table, what group is {Element Name} ({Symbol}) found in?",
+                "Can you tell me which group {Element Name} ({Symbol}) is assigned to?",
+                "What is the group number for {Element Name} ({Symbol})?",
+                "Under which group can {Element Name} ({Symbol}) be classified?",
+                "When categorized, in which group is {Element Name} ({Symbol}) placed?",
+                "In terms of groups, which group does {Element Name} ({Symbol}) fall under?",
+                "Where can you find {Element Name} ({Symbol}) in terms of groups?",
+                "What is the group for {Element Name} ({Symbol}) in the periodic table?",
+                "According to the periodic table, what group is {Element Name} ({Symbol}) in?"
+            ],
+            "prompt_name": "11_templates_questions"
+        },
+        {
+            "entity_type": "atomic mass question",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "What is the atomic mass of {Element Name} ({Symbol})?",
+                "Do you know the atomic mass of {Element Name} ({Symbol})?",
+                "What is the atomic mass for {Element Name} ({Symbol})?",
+                "Can you tell me the atomic mass of {Element Name} ({Symbol})?",
+                "What atomic mass is assigned to {Element Name} ({Symbol})?",
+                "What is the atomic mass value for {Element Name} ({Symbol})?",
+                "What is known about the atomic mass of {Element Name} ({Symbol})?",
+                "In terms of atomic mass, what is {Element Name} ({Symbol}) assigned?",
+                "What atomic mass has been assigned to {Element Name} ({Symbol})?",
+                "What is the known atomic mass for {Element Name} ({Symbol})?",
+                "When it comes to atomic mass, what value does {Element Name} ({Symbol}) have?"
+            ],
+            "prompt_name": "11_templates_questions"
+        },
+        {
+            "entity_type": "electronegativity question",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "What is the electronegativity of {Element Name} ({Symbol})?",
+                "Do you know the electronegativity of {Element Name} ({Symbol})?",
+                "What is the electronegativity assigned to {Element Name} ({Symbol}) in the periodic table?",
+                "Can you tell me the electronegativity of {Element Name} ({Symbol})?",
+                "What electronegativity value is assigned to {Element Name} ({Symbol})?",
+                "What is the electronegativity value for {Element Name} ({Symbol})?",
+                "What electronegativity has been assigned to {Element Name} ({Symbol})?",
+                "Where can you find {Element Name} ({Symbol}) in terms of electronegativity?",
+                "In terms of electronegativity, what value does {Element Name} ({Symbol}) have?",
+                "According to the periodic table, what is the electronegativity of {Element Name} ({Symbol})?",
+                "Can you find the electronegativity of {Element Name} ({Symbol})?"
+            ],
+            "prompt_name": "11_templates_questions"
+        },
+        {
+            "entity_type": "following atomic number",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "In the periodic table, the element directly after {Element Name} ({Symbol}) has an atomic number of ",
+                "The atomic number of the element that comes right after {Element Name} ({Symbol}) is ",
+                "The atomic number of the element following {Element Name} ({Symbol}) is ",
+                "{Element Name} ({Symbol}) is followed by an element with an atomic number of ",
+                "In the periodic sequence, the element after {Element Name} ({Symbol}) has an atomic number of ",
+                "Just after {Element Name} ({Symbol}), there is an element with an atomic number of ",
+                "The element that comes after {Element Name} ({Symbol}) in the periodic table has an atomic number of ",
+                "Right after {Element Name} ({Symbol}), the element’s atomic number is ...",
+                "After {Element Name} ({Symbol}) in the periodic table, there is an element with an atomic number of ",
+                "The element directly following {Element Name} ({Symbol}) has an atomic number of ",
+                "The atomic number of the element found just after {Element Name} ({Symbol}) is "
+            ],
+            "prompt_name": "11_templates_following"
+        },
+        {
+            "entity_type": "atomic mass difference",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "The atomic mass difference between {Element Name} ({Symbol}) and the previous element is ",
+                "The atomic mass of {Element Name} ({Symbol}) differs from that of the preceding element by ",
+                "The difference in atomic mass between {Element Name} ({Symbol}) and the element before it is ",
+                "The atomic mass difference between {Element Name} ({Symbol}) and the element that precedes it is ",
+                "The atomic mass difference between {Element Name} ({Symbol}) and the element just before it is",
+                "The atomic mass of {Element Name} ({Symbol}) is different from the element before it by ",
+                "The element before {Element Name} ({Symbol}) has an atomic mass difference of ",
+                "In the periodic sequence, the atomic mass difference between {Element Name} ({Symbol}) and the element before it is ",
+                "Right before {Element Name} ({Symbol}), the atomic mass difference is ...",
+                "Before {Element Name} ({Symbol}) in the periodic table, the atomic mass difference between them is ",
+                "The difference in atomic mass between {Element Name} ({Symbol}) and the element found just before it is "
+            ],
+            "prompt_name": "11_templates_atomic_mass_difference"
+        },
+        {
+            "entity_type": "double atomic mass",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "The atomic mass of {Element Name} ({Symbol}) doubled is  ",
+                "Twice the atomic mass of {Element Name} ({Symbol}) is  ",
+                "Double the atomic mass of {Element Name} ({Symbol}) gives  ",
+                "The atomic mass of {Element Name} ({Symbol}), when multiplied by 2, is  ",
+                "Doubling the atomic mass of {Element Name} ({Symbol}) results in  ",
+                "The result of doubling the atomic mass of {Element Name} ({Symbol}) is  ",
+                "{Element Name} ({Symbol})'s atomic mass, when doubled, equals  ",
+                "Multiplying the atomic mass of {Element Name} ({Symbol}) by 2 gives  ",
+                "{Element Name} ({Symbol})’s atomic mass times two equals  ",
+                "Two times the atomic mass of {Element Name} ({Symbol}) is  ",
+                "The value of {Element Name} ({Symbol})'s atomic mass doubled is  "
+            ],
+            "prompt_name": "11_templates_double_atomic_mass"
+        },
+        {
+            "entity_type": "square atomic mass",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "The square of the atomic mass of {Element Name} ({Symbol}) is ",
+                "The atomic mass of {Element Name} ({Symbol}) squared is ",
+                "Squaring the atomic mass of {Element Name} ({Symbol}) gives ",
+                "The atomic mass of {Element Name} ({Symbol}), when squared, is ",
+                "The result of squaring the atomic mass of {Element Name} ({Symbol}) is ",
+                "{Element Name} ({Symbol})'s atomic mass, when squared, equals ",
+                "Multiplying the atomic mass of {Element Name} ({Symbol}) by itself gives ",
+                "{Element Name} ({Symbol})’s atomic mass times itself equals ",
+                "The value of {Element Name} ({Symbol})'s atomic mass squared is ",
+                "The atomic mass of {Element Name} ({Symbol}) to the power of two is ",
+                "When you square the atomic mass of {Element Name} ({Symbol}), you get "
+            ],
+            "prompt_name": "11_templates_square_atomic_mass"
+        },
         
 
-        # {
-        #     "entity_type": "numebr_test",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #       "In numbers, the Arabic numeral for {Number}",
-        #     ],
-        #     "prompt_name": "1_templates"
-        # },
+        {
+            "entity_type": "numebr_test",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+              "In numbers, the Arabic numeral for {Number}",
+            ],
+            "prompt_name": "1_templates"
+        },
         
-        # {
-        #     "entity_type": "atomic number_single",
-        #     "data_file":"periodic_table_dataset.csv",
-        #     "templates": [
-        #       "In the periodic table, the atomic number of {Symbol}",
-        #     ],
-        #     "prompt_name": "1_templates"
-        # },
-
-        # {
-        #     "entity_type": "day",
-        #     "data_file":"2000_january_weekdays.csv",
-        #     "templates": [
-        #       "Monday, Wednesday, Thursday, Tuesday, Friday, Sunday, Saturday. The day of the week on 2000 January {day} is ",
-        #     ],
-        #     "prompt_name": "1_templates"
-        # }
-
-
-        # {
-        #     "entity_type": "unrelated question",
-        #     "data_file": "periodic_table_dataset.csv",
-        #     "templates": [
-        #         "My favorite element is {Symbol}. The height of the Eiffel Tower stands at,",
-        #         "I love {Symbol}. The height of the Eiffel Tower happens to be,",
-        #         "The element I like most is {Symbol}. The Eiffel Tower’s height measures,",
-        #         "My favorite is {Symbol}. The Eiffel Tower is known to be,",
-        #         "If I had to pick, {Symbol} would be my favorite element. The Eiffel Tower is approximately,",
-        #         "{Symbol} is the element I like best. Its height, the Eiffel Tower, is,",
-        #         "Among all the elements, {Symbol} is my favorite. The Eiffel Tower rises to,",
-        #         "For me, {Symbol} is the top choice. The height of the Eiffel Tower reaches ",
-        #         "I think {Symbol} is the best element. The Eiffel Tower has a height of ",
-        #         "The element I love is {Symbol}. Its height, the Eiffel Tower, stands at ",
-        #         "{Symbol} is my favorite element. The height of the Eiffel Tower is said to be "
-        #     ],
-
-        #     "prompt_name": "11_templates_questions"
-        # },
+        {
+            "entity_type": "atomic number_single",
+            "data_file":"periodic_table_dataset.csv",
+            "templates": [
+              "In the periodic table, the atomic number of {Symbol}",
+            ],
+            "prompt_name": "1_templates"
+        },
 
         {
             "entity_type": "atomic number_relationship",
@@ -699,7 +645,7 @@ def main():
             "prompt_name": "1_templates"
         },
 
-                {
+        {
             "entity_type": "period_relationship",
             "data_file":"periodic_table_dataset.csv",
             "templates": [
@@ -708,7 +654,7 @@ def main():
             "prompt_name": "1_templates"
         },
 
-                {
+        {
             "entity_type": "electronegativity_relationship",
             "data_file":"periodic_table_dataset.csv",
             "templates": [
@@ -735,14 +681,6 @@ def main():
             print(f"Data file {data_file} not found. Skipping entity {entity_type}.")
             continue
         df = pd.read_csv(data_file)
-
-        # # Remove rows with specific atomic numbers！！！！！！！！！！
-        # atomic_numbers_to_remove = [46, 43, 40, 37]
-        # df = df[~df['Atomic Number'].isin(atomic_numbers_to_remove)]
-
-        # # Filter data
-        # print("Filtered DataFrame:")
-        # print(df)
         
         # Generate prompts
         prompts = generate_prompts(df, templates)

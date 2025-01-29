@@ -81,23 +81,23 @@ def analyze_attention(model, input_ids, attention_mask, tokenizer, source_tokens
     tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
     token_ids = input_ids[0].tolist()
 
-    # 去除第一个token (BOS假定在位置0)
+    # drop the first token
     tokens = tokens[1:]
     token_ids = token_ids[1:]
     attention_mask = attention_mask[:, 1:]
 
-    # 若最后一个token是EOS，则去除
+    # drop the last token if it is EOS
     if token_ids and token_ids[-1] == eos_token_id:
         tokens = tokens[:-1]
         token_ids = token_ids[:-1]
         attention_mask = attention_mask[:, :-1]
 
-    # 裁剪attention在seq维度去除头尾token
+    # crop the attention matrices
     cropped_attentions = []
     for layer_attn in all_attentions:
         # layer_attn: [1, num_heads, seq_len, seq_len]
-        layer_attn = layer_attn[:, :, 1:, 1:]  # 去除第一个token
-        if token_ids and token_ids[-1] == eos_token_id:  # 如果最后是EOS，同步再去除
+        layer_attn = layer_attn[:, :, 1:, 1:]  # drop the first token
+        if token_ids and token_ids[-1] == eos_token_id:  # drop the last token if it is EOS
             layer_attn = layer_attn[:, :, :-1, :-1]
         cropped_attentions.append(layer_attn)
 
@@ -158,15 +158,12 @@ def plot_attention_heatmap(attention_source_to_all_tokens, tokens, title, save_p
     # Convert list of lists to a 2D NumPy array (layers x tokens)
     attention_matrix = np.stack(attention_source_to_all_tokens)
 
-    # 删除最后一个 token 和对应的矩阵列
     tokens = ['In', 'Ġthe', 'Ġperiodic', 'Ġtable', 'Ġof', 'Ġelement', ',', 'Ġthe', '{Attribute}', 'Ġof', '{Element}', 'Ġis']
     attention_matrix = attention_matrix[:, :-1]
 
-    # 打印调试信息，确认一致性
     print("Final Tokens:", tokens)
     print("Final Attention Matrix Shape:", attention_matrix.shape)
 
-    # 绘制热图
     plt.figure(figsize=(12, 8))
     sns.heatmap(
         attention_matrix,
@@ -304,9 +301,8 @@ def main():
         attribute_last_tokens[attribute] = last_token
 
     for element in elements:
-        element_last_tokens[element] = element  # 假设元素符号是单个 token
+        element_last_tokens[element] = element  
 
-    # 准备 prompts 和对应的 target tokens
     for attribute in attributes:
         for element in elements:
             prompt = prompt_template.format(Attribute=attribute, Element=element)
@@ -327,7 +323,6 @@ def main():
     tokens_reference = None
     num_prompts = len(prompts)
 
-    # 获取 eos_token_id
     eos_token_id = tokenizer.eos_token_id
 
     for idx in range(num_prompts):
@@ -374,8 +369,8 @@ def main():
             avg_attention_to_elements = attn_elem
             avg_attention_to_others_attributes = attn_others_attr
             avg_attention_to_others_elements = attn_others_elem
-            avg_attention_to_all_tokens = attn_all_attr  # 假设 attributes 和 elements 的 attention_all 相同
-            avg_attention_entropies = attn_entropy_attr  # 假设 entropy 相似
+            avg_attention_to_all_tokens = attn_all_attr  
+            avg_attention_entropies = attn_entropy_attr  
         else:
             avg_attention_to_attributes = [x + y for x, y in zip(avg_attention_to_attributes, attn_attr)]
             avg_attention_to_elements = [x + y for x, y in zip(avg_attention_to_elements, attn_elem)]
@@ -384,7 +379,6 @@ def main():
             avg_attention_to_all_tokens = [x + y for x, y in zip(avg_attention_to_all_tokens, attn_all_attr)]
             avg_attention_entropies = [x + y for x, y in zip(avg_attention_entropies, attn_entropy_attr)]
 
-    # 计算平均值
     avg_attention_to_attributes = [x / num_prompts for x in avg_attention_to_attributes]
     avg_attention_to_elements = [x / num_prompts for x in avg_attention_to_elements]
     avg_attention_to_others_attributes = [x / num_prompts for x in avg_attention_to_others_attributes]
@@ -393,15 +387,15 @@ def main():
     avg_attention_entropies = [x / num_prompts for x in avg_attention_entropies]
 
     layers = list(range(1, total_layers + 1))
-    save_dir = 'Results_entity_attention'
+    save_dir = 'Results/entity_attention'
     os.makedirs(save_dir, exist_ok=True)
 
-    # 绘制: Average Attention from "is" to Attributes vs. Other Tokens Across Layers
+    # plot: Average Attention from "is" to Attributes vs. Other Tokens Across Layers
     title_attr = 'Average Attention from "is" to Attributes vs. Other Tokens Across Layers'
     save_path_attr = os.path.join(save_dir, 'attention_is_to_attributes_comparison_avg.png')
     plot_attention_comparison(layers, avg_attention_to_attributes, avg_attention_to_others_attributes, title_attr, save_path_attr)
 
-    # 绘制: Average Attention from "is" to Elements vs. Other Tokens Across Layers
+    # plot: Average Attention from "is" to Elements vs. Other Tokens Across Layers
     title_elem = 'Average Attention from "is" to Elements vs. Other Tokens Across Layers'
     save_path_elem = os.path.join(save_dir, 'attention_is_to_elements_comparison_avg.png')
     plt.figure(figsize=(10, 6))
@@ -415,19 +409,19 @@ def main():
     plt.savefig(save_path_elem, dpi=300, bbox_inches='tight')
     plt.close()
 
-    # 绘制: Average Attention Heatmap from "is" to All Tokens Across Layers
+    # plot: Average Attention Heatmap from "is" to All Tokens Across Layers
     title_heatmap = 'Average Attention from "is" to All Tokens Across Layers'
     save_path_heatmap = os.path.join(save_dir, 'attention_is_to_all_tokens_heatmap_avg.png')
     plot_attention_heatmap(avg_attention_to_all_tokens, tokens_reference, title_heatmap, save_path_heatmap)
 
-    # 绘制: Average Attention Entropy Across Layers
+    # plot: Average Attention Entropy Across Layers
     entropy_title = 'Average Attention Distribution Entropy Across Layers'
     save_path_entropy = os.path.join(save_dir, 'attention_entropy_avg.png')
     plot_attention_entropy(layers, avg_attention_entropies, entropy_title, save_path_entropy)
 
     print(f"Attention analysis complete. Averaged plots saved to {save_dir}")
 
-    # 绘制: Combined Figure
+    # plot: Combined Figure
     save_path_combined = os.path.join(save_dir, 'combined_figure.png')
     plot_combined_figure(
         layers,
