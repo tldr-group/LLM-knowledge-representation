@@ -523,78 +523,6 @@ def main():
             ],
             "prompt_name": "11_templates_questions"
         },
-        {
-            "entity_type": "following atomic number",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "In the periodic table, the element directly after {Element Name} ({Symbol}) has an atomic number of ",
-                "The atomic number of the element that comes right after {Element Name} ({Symbol}) is ",
-                "The atomic number of the element following {Element Name} ({Symbol}) is ",
-                "{Element Name} ({Symbol}) is followed by an element with an atomic number of ",
-                "In the periodic sequence, the element after {Element Name} ({Symbol}) has an atomic number of ",
-                "Just after {Element Name} ({Symbol}), there is an element with an atomic number of ",
-                "The element that comes after {Element Name} ({Symbol}) in the periodic table has an atomic number of ",
-                "Right after {Element Name} ({Symbol}), the element’s atomic number is ...",
-                "After {Element Name} ({Symbol}) in the periodic table, there is an element with an atomic number of ",
-                "The element directly following {Element Name} ({Symbol}) has an atomic number of ",
-                "The atomic number of the element found just after {Element Name} ({Symbol}) is "
-            ],
-            "prompt_name": "11_templates_following"
-        },
-        {
-            "entity_type": "atomic mass difference",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "The atomic mass difference between {Element Name} ({Symbol}) and the previous element is ",
-                "The atomic mass of {Element Name} ({Symbol}) differs from that of the preceding element by ",
-                "The difference in atomic mass between {Element Name} ({Symbol}) and the element before it is ",
-                "The atomic mass difference between {Element Name} ({Symbol}) and the element that precedes it is ",
-                "The atomic mass difference between {Element Name} ({Symbol}) and the element just before it is",
-                "The atomic mass of {Element Name} ({Symbol}) is different from the element before it by ",
-                "The element before {Element Name} ({Symbol}) has an atomic mass difference of ",
-                "In the periodic sequence, the atomic mass difference between {Element Name} ({Symbol}) and the element before it is ",
-                "Right before {Element Name} ({Symbol}), the atomic mass difference is ...",
-                "Before {Element Name} ({Symbol}) in the periodic table, the atomic mass difference between them is ",
-                "The difference in atomic mass between {Element Name} ({Symbol}) and the element found just before it is "
-            ],
-            "prompt_name": "11_templates_atomic_mass_difference"
-        },
-        {
-            "entity_type": "double atomic mass",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "The atomic mass of {Element Name} ({Symbol}) doubled is  ",
-                "Twice the atomic mass of {Element Name} ({Symbol}) is  ",
-                "Double the atomic mass of {Element Name} ({Symbol}) gives  ",
-                "The atomic mass of {Element Name} ({Symbol}), when multiplied by 2, is  ",
-                "Doubling the atomic mass of {Element Name} ({Symbol}) results in  ",
-                "The result of doubling the atomic mass of {Element Name} ({Symbol}) is  ",
-                "{Element Name} ({Symbol})'s atomic mass, when doubled, equals  ",
-                "Multiplying the atomic mass of {Element Name} ({Symbol}) by 2 gives  ",
-                "{Element Name} ({Symbol})’s atomic mass times two equals  ",
-                "Two times the atomic mass of {Element Name} ({Symbol}) is  ",
-                "The value of {Element Name} ({Symbol})'s atomic mass doubled is  "
-            ],
-            "prompt_name": "11_templates_double_atomic_mass"
-        },
-        {
-            "entity_type": "square atomic mass",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "The square of the atomic mass of {Element Name} ({Symbol}) is ",
-                "The atomic mass of {Element Name} ({Symbol}) squared is ",
-                "Squaring the atomic mass of {Element Name} ({Symbol}) gives ",
-                "The atomic mass of {Element Name} ({Symbol}), when squared, is ",
-                "The result of squaring the atomic mass of {Element Name} ({Symbol}) is ",
-                "{Element Name} ({Symbol})'s atomic mass, when squared, equals ",
-                "Multiplying the atomic mass of {Element Name} ({Symbol}) by itself gives ",
-                "{Element Name} ({Symbol})’s atomic mass times itself equals ",
-                "The value of {Element Name} ({Symbol})'s atomic mass squared is ",
-                "The atomic mass of {Element Name} ({Symbol}) to the power of two is ",
-                "When you square the atomic mass of {Element Name} ({Symbol}), you get "
-            ],
-            "prompt_name": "11_templates_square_atomic_mass"
-        },
         
 
         {
@@ -661,7 +589,26 @@ def main():
               "In the periodic table, the electronegativity of {Symbol}",
             ],
             "prompt_name": "1_templates"
-        }
+        },
+                                
+        {
+            "entity_type": "element",
+            "data_file": "periodic_table_dataset.csv",
+            "templates": [
+                "Element {Element Name} {Symbol}",
+                "In the periodic table, {Element Name} {Symbol}",
+                "{Element Name} {Symbol}",
+                "In chemistry, {Element Name} {Symbol}",
+                "The symbol {Symbol} represents {Element Name}",
+                "{Element Name} with symbol {Symbol}",
+                "{Symbol} is short for {Element Name}",
+                "Identified as {Element Name} {Symbol}",
+                "The chemical notation {Symbol} stands for {Element Name}",
+                "“{Element Name}, abbreviated as {Symbol}",
+                "{Symbol}, also called {Element Name}"
+            ],
+            "prompt_name": "11_templates"
+        },
     ]
     
     # Define save directory

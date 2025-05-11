@@ -1,40 +1,45 @@
-# LLM-Knowledge-Representation
 
-This study investigates how Large Language Models (LLMs) represent and recall **Interwoven Structured Knowledge** across transformer layers.
+# Layerwise Recall and the Geometry of Interwoven Knowledge in LLMs
 
-## Project Structure
-The project consists of three main parts, along with preliminary setup and data preparation in the `Pre` folder.
+This repository contains the official codebase for our paper:  
+**"Layerwise Recall and the Geometry of Interwoven Knowledge in LLMs"**
 
-### **Pre** (Preliminary Work)
-The `Pre` folder includes essential preparation steps:
-- **Dataset generation**
-- **Activation extraction**
-- **Attention map analysis**
-- **t-SNE visualization of activation distributions**
+We investigate how large language models (LLMs) encode structured scientific knowledge using chemical elements as a case study. Our key findings include:
 
-### **1. Intermediate Layers Encode Knowledge, Later Layers Shape Language** (`Language_vs_factual` folder)
-This section explores how intermediate layers store factual knowledge, while later layers refine language outputs.
-- **Linear probing**: Training Support Vector Regression (SVR) models for each layer.
-- **Non-matching linear probing**
-- **Probability of the target token across layers**: Probabilities are calculated by iteratively re-running the model with the next token appended to the prompt.
+- Discovery of a **3D spiral structure** in LLM activations, aligned with the periodic table.
+- **Intermediate layers** encode continuous, overlapping attributes suitable for indirect recall.
+- **Deeper layers** sharpen categorical boundaries and integrate linguistic context.
+- LLMs organize facts as **geometry-aware manifolds**, not just isolated tokens.
 
-### **2. Recall Peaks at Intermediate Layers** (`Intervention` folder)
-This section investigates whether related attributes are interconnected by analyzing the recall ability of LLMs—their capacity to retrieve attributes related to, but not explicitly mentioned in the prompt. Additionally, we explore the geometric mechanisms behind this recall process by intervention.
+---
 
-### **3. Relationship in Attribute Representation: From Superposition to Separation** (`relationship` folder)
-This section examines whether one attribute’s representation can recall related attributes without being mentioned, as well as the relationships between attribute representations across different layers.
+## Repository Structure
 
-## **Findings**
-We show that **intermediate layers encode factual knowledge** by superimposing related attributes in overlapping spaces, enabling effective recall even when attributes are not explicitly prompted. In contrast, **later layers refine linguistic patterns and progressively separate attribute representations**, optimizing task-specific outputs while narrowing attribute recall.
+Each folder corresponds to a section or concept in the paper:
 
-All study results can be found in the `Results` folder.
+- `Pre/` — Preprocessing scripts: prompt creation, activation extraction.
+- `Geometry/` — Code for geometric analyses, such as spiral detection.
+- `Direct_recall/` — Linear probing for direct factual recall.
+- `Indirect_recall/` — Experiments on retrieving unmentioned or related facts.
+- `Appendix/` — Extra analysis, visualizations, and ablation results.
+- `Results/` — Saved figures, metrics, and outputs.
+- `periodic_table_dataset.csv` — Structured dataset of 50 elements and attributes.
 
-We identify diverse encoding patterns, including the first-time observation of **3D spiral structures** when analyzing information related to the periodic table of elements. Our findings reveal a dynamic transition in attribute representations across layers, contributing to mechanistic interpretability and providing insights into how LLMs process complex, interrelated knowledge.
+---
 
-## **Setup & Installation**
-1. Before running the code, **set your HF_TOKEN** in `config.json`.
-2. Install the required dependencies:
-   ```sh
+## Setup & Installation
+
+1. Clone the repository and enter the project directory.
+
+2. Set your HuggingFace API token in `config.json`:
+   ```json
+   {
+     "HF_TOKEN": "your_huggingface_token"
+   }
+   ```
+
+3. Install dependencies:
+   ```bash
    pip install -r requirements.txt
    ```
-3. Run the respective scripts from each folder as needed.
+
