@@ -1,5 +1,5 @@
 
-# Layerwise Recall and the Geometry of Interwoven Knowledge in LLMs
+# Do Llamas understand the periodic table?
 
 This repository contains the official codebase for our paper:  
 **"Do Llamas understand the periodic table?"**
