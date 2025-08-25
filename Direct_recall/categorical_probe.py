@@ -18,60 +18,26 @@ predictions_dict = {}  # Structure: model name -> layer -> {'y_test': ..., 'y_pr
 accuracy_scores_dict = {}    # Structure: model name -> [accuracy per layer]
 
 # Define model configuration using a dictionary, not a class
-# models = [
-#     {
-#         'name': 'Llama-2-7b-hf',
-#         'activation_path_template': 'activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates.{layer}.pt',
-#         'num_layers': 32
-#     },
-#     {
-#         'name': 'Llama-3.1-8B',
-#         'activation_path_template': 'activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt',
-#         'num_layers': 32
-#     },
-#     {
-#         'name': 'Meta-Llama-3.1-70B',
-#         'activation_path_template': 'activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt',
-#         'num_layers': 80
-#     }
-# ]
-
 models = [
     {
         'name': 'Llama-2-7b-hf',
-        'activation_path_template': 'activation_datasets/meta-llama-Llama-2-7b-hf/element/element.last.11_templates.layer_{layer}.pt',
+        'activation_path_template': 'activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates.{layer}.pt',
         'num_layers': 32
     },
     {
         'name': 'Llama-3.1-8B',
-        'activation_path_template': 'activation_datasets/meta-llama-Llama-3.1-8B/element/element.last.11_templates.layer_{layer}.pt',
+        'activation_path_template': 'activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt',
         'num_layers': 32
     },
     {
         'name': 'Meta-Llama-3.1-70B',
-        'activation_path_template': 'activation_datasets/meta-llama-Meta-Llama-3.1-70B/element/element.last.11_templates.layer_{layer}.pt',
+        'activation_path_template': 'activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt',
         'num_layers': 80
     }
 ]
 
 
-# models = [
-#     {
-#         'name': 'Llama-2-7b-hf',
-#         'activation_path_template': 'activation_datasets/meta-llama-Llama-2-7b-hf/category/category.last.11_templates.layer_{layer}.pt',
-#         'num_layers': 32
-#     },
-#     {
-#         'name': 'Llama-3.1-8B',
-#         'activation_path_template': 'activation_datasets/meta-llama-Llama-3.1-8B/category/category.last.11_templates.layer_{layer}.pt',
-#         'num_layers': 32
-#     },
-#     {
-#         'name': 'Meta-Llama-3.1-70B',
-#         'activation_path_template': 'activation_datasets/meta-llama-Meta-Llama-3.1-70B/category/category.last.11_templates.layer_{layer}.pt',
-#         'num_layers': 80
-#     }
-# ]
+
 
 # ---------------------------- Data Loading and Preprocessing ---------------------------- #
 

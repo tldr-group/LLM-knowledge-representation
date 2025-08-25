@@ -330,9 +330,9 @@ def main():
     
     # Define model name
     # model_name = config_data.get("MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B")
-    model_name = "meta-llama/Meta-Llama-3.1-70B"
+    # model_name = "meta-llama/Meta-Llama-3.1-70B"
     # model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
-    # model_name = "meta-llama/Llama-2-7b-hf"
+    model_name = "meta-llama/Llama-2-7b-hf"
     # model_name = "meta-llama/Llama-3.1-8B"
 
     
@@ -612,7 +612,7 @@ def main():
     ]
     
     # Define save directory
-    base_save_dir = "activation_datasets"
+    base_save_dir = "activation_datasets_2"
     
     # Iterate over each entity type
     for entity in entities:

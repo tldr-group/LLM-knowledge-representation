@@ -20,7 +20,6 @@ CONFIG = {
     # PCA Configuration
     'USE_PCA': True,                # Toggle PCA usage
     'PCA_COMPONENTS': 35,           # Number of PCA components
-        # 'PCA_COMPONENTS': 49,           # Number of PCA components
 
     # Data Configuration
     'label_columns': ['Group', 'Atomic Number', 'Period','Random','Random_group'],
@@ -52,12 +51,6 @@ CONFIG = {
 
     # Processing Configuration
     'num_layers': 80,                # Total number of layers to process
-
-    # Hugging Face Token (if required)
-    'hf_token': "<YOUR_HF_TOKEN_HERE>",  # Replace with your Hugging Face token
-
-    # Original Logits Path
-    'original_logits_path': 'logits_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number_single.last.1_templates.last_token_logits.pt',
 }
 
 # ---------------------------- Data Loading and Label Transformation ---------------------------- #
@@ -200,11 +193,10 @@ def perform_intervention_and_generate(
     random_group_target, random_target, r_period, r_target, layer, symbol, target_group, target_r,
     model, tokenizer, input_ids, batch_mask, device,
     periodic_table, labels_transformed, activation_file_template,
-    scaler, y_scaler, pca, config,
-    original_logits, symbol_index
+    scaler, y_scaler, pca, config
 ):
     """
-    Perform intervention on activations, generate text, and compute cosine similarity of logits.
+    Perform intervention on activations and generate text.
     """
     activation_file_path = activation_file_template.format(layer=layer)
     if not os.path.exists(activation_file_path):
@@ -296,10 +288,10 @@ def perform_intervention_and_generate(
 
     # Scale linear_target using y_scaler
     linear_target_scaled = y_scaler.transform(linear_target.reshape(1, -1)).flatten()
-    print(f"Linear target scaled: {linear_target_scaled}")
+    # print(f"Linear target scaled: {linear_target_scaled}")
 
     delta = linear_target_scaled - W_x_average_with_b
-    print(f"Layer {layer}, Symbol {symbol}: Delta: {delta}")
+    # print(f"Layer {layer}, Symbol {symbol}: Delta: {delta}")
 
     W_pseudo_inverse = np.linalg.pinv(W)
     Delta_x = W_pseudo_inverse.dot(delta)
@@ -312,35 +304,35 @@ def perform_intervention_and_generate(
     x_new = scaler.inverse_transform(x_new_scaled)
 
 
-    print("Activation Data Statistics Before Scaling:")
-    print(f"Mean: {X.mean()}, Std: {X.std()}, Max: {X.max()}, Min: {X.min()}")
-    print(f"Any NaN in X: {np.isnan(X).any()}, Any Inf in X: {np.isinf(X).any()}")
+    # print("Activation Data Statistics Before Scaling:")
+    # print(f"Mean: {X.mean()}, Std: {X.std()}, Max: {X.max()}, Min: {X.min()}")
+    # print(f"Any NaN in X: {np.isnan(X).any()}, Any Inf in X: {np.isinf(X).any()}")
 
-    print(f"Layer {layer}: Standardized the training dataset.")
-    print("Activation Data Statistics After Scaling:")
-    print(f"Mean: {X_train_scaled.mean()}, Std: {X_train_scaled.std()}, Max: {X_train_scaled.max()}, Min: {X_train_scaled.min()}")
+    # print(f"Layer {layer}: Standardized the training dataset.")
+    # print("Activation Data Statistics After Scaling:")
+    # print(f"Mean: {X_train_scaled.mean()}, Std: {X_train_scaled.std()}, Max: {X_train_scaled.max()}, Min: {X_train_scaled.min()}")
 
-    print("Labels Before Scaling:")
-    print(f"Mean: {y.mean()}, Std: {y.std()}, Max: {y.max()}, Min: {y.min()}")
-    print(f"Any NaN in y: {np.isnan(y).any()}, Any Inf in y: {np.isinf(y).any()}")
+    # print("Labels Before Scaling:")
+    # print(f"Mean: {y.mean()}, Std: {y.std()}, Max: {y.max()}, Min: {y.min()}")
+    # print(f"Any NaN in y: {np.isnan(y).any()}, Any Inf in y: {np.isinf(y).any()}")
 
-    print("Labels After Scaling:")
-    print(f"Mean: {y_train_scaled.mean()}, Std: {y_train_scaled.std()}, Max: {y_train_scaled.max()}, Min: {y_train_scaled.min()}")
+    # print("Labels After Scaling:")
+    # print(f"Mean: {y_train_scaled.mean()}, Std: {y_train_scaled.std()}, Max: {y_train_scaled.max()}, Min: {y_train_scaled.min()}")
 
-    print("x_average Statistics Before Scaling:")
-    print(f"Mean: {x_average.mean()}, Std: {x_average.std()}, Max: {x_average.max()}, Min: {x_average.min()}")
+    # print("x_average Statistics Before Scaling:")
+    # print(f"Mean: {x_average.mean()}, Std: {x_average.std()}, Max: {x_average.max()}, Min: {x_average.min()}")
 
-    print("x_average_scaled Statistics:")
-    print(f"Mean: {x_average_scaled.mean()}, Std: {x_average_scaled.std()}, Max: {x_average_scaled.max()}, Min: {x_average_scaled.min()}")
-
-
-    print(f"W shape: {W.shape}, W statistics: Mean: {W.mean()}, Std: {W.std()}, Max: {W.max()}, Min: {W.min()}")
-    print(f"b: {b}")
+    # print("x_average_scaled Statistics:")
+    # print(f"Mean: {x_average_scaled.mean()}, Std: {x_average_scaled.std()}, Max: {x_average_scaled.max()}, Min: {x_average_scaled.min()}")
 
 
-    print("Activation Data from File Statistics:")
+    # print(f"W shape: {W.shape}, W statistics: Mean: {W.mean()}, Std: {W.std()}, Max: {W.max()}, Min: {W.min()}")
+    # print(f"b: {b}")
+
+
+    # print("Activation Data from File Statistics:")
     activation_data = torch.load(activation_file_path, map_location='cpu').numpy()
-    print(f"Mean: {activation_data.mean()}, Std: {activation_data.std()}, Max: {activation_data.max()}, Min: {activation_data.min()}")
+    # print(f"Mean: {activation_data.mean()}, Std: {activation_data.std()}, Max: {activation_data.max()}, Min: {activation_data.min()}")
 
     activation_replaced = False
 
@@ -402,46 +394,19 @@ def perform_intervention_and_generate(
         number_difference = None
         first_number = None
 
-    # Now, perform a forward pass to get the new logits after intervention
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=batch_mask)
-        new_logits = outputs.logits[:, -1, :].cpu().numpy()  # Shape: [batch_size, vocab_size]
-        print(f"Layer {layer}, Symbol {symbol}: Extracted new logits shape: {new_logits.shape}")
-
-    # Retrieve original logits for this symbol
-    original_logits_symbol = original_logits[symbol_index]  # Shape: [vocab_size]
-
-    # # Compute cosine similarity
-    # if new_logits.shape[0] != 1:
-    #     print(f"Layer {layer}, Symbol {symbol}: Unexpected batch size for logits.")
-    #     cosine_similarity = None
-    # else:
-    #     from sklearn.metrics.pairwise import cosine_similarity
-    #     cosine_similarity = cosine_similarity(new_logits, original_logits_symbol.reshape(1, -1))[0][0]
-    #     print(f"Layer {layer}, Symbol {symbol}: Cosine Similarity: {cosine_similarity}")
-    # Compute Euclidean distance
-    if new_logits.shape[0] != 1:
-        print(f"Layer {layer}, Symbol {symbol}: Unexpected batch size for logits.")
-        euclidean_distance = None
-    else:
-        from sklearn.metrics.pairwise import euclidean_distances
-        euclidean_distance = euclidean_distances(new_logits, original_logits_symbol.reshape(1, -1))[0][0]
-        print(f"Layer {layer}, Symbol {symbol}: Euclidean Distance: {euclidean_distance}")
-
-    return number_difference, first_number, euclidean_distance
+    return number_difference, first_number
 
 # ---------------------------- Collect Number Differences ---------------------------- #
 
 def collect_number_differences(
     periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods,
-    config, model, tokenizer, scaler, y_scaler, pca, original_logits
+    config, model, tokenizer, scaler, y_scaler, pca
 ):
     """
-    Iterate through layers and symbols to collect number differences and cosine similarities.
+    Iterate through layers and symbols to collect number differences.
     """
     number_diff_df = pd.DataFrame(columns=symbols)
     first_num_df = pd.DataFrame(columns=symbols)
-    similarity_df = pd.DataFrame(columns=symbols)  # New DataFrame for cosine similarities
 
     # Define prompts_dict (Adjust the prompt as needed)
     prompts_dict = {symbol: f"In the periodic table, the atomic number of element" for symbol in symbols}
@@ -460,19 +425,13 @@ def collect_number_differences(
     else:
         print("No existing CSV found for first numbers. Starting fresh.")
 
-    if os.path.exists(config['csv_save_path_similarity']):
-        similarity_df = pd.read_csv(config['csv_save_path_similarity'], index_col=0)
-    else:
-        print("No existing CSV found for cosine similarities. Starting fresh.")
+
 
     # Create output directory if it doesn't exist
     if not os.path.exists("results_linear"):
         os.makedirs("results_linear")
 
-    # Assuming that the original logits have the same order as symbols
-    if original_logits.shape[0] != len(symbols):
-        print(f"Original logits count {original_logits.shape[0]} does not match number of symbols {len(symbols)}.")
-        return number_diff_df, first_num_df, similarity_df
+
 
     # for layer in range(0, config['num_layers']):
     for layer in range(20,21):  # Adjusted to process layer 20 only for demonstration
@@ -483,8 +442,6 @@ def collect_number_differences(
             number_diff_df.loc[layer] = [np.nan] * len(symbols)
         if layer not in first_num_df.index:
             first_num_df.loc[layer] = [np.nan] * len(symbols)
-        if layer not in similarity_df.index:
-            similarity_df.loc[layer] = [np.nan] * len(symbols)
 
         for idx, symbol in enumerate(symbols):
             if not pd.isna(number_diff_df.at[layer, symbol]):
@@ -504,7 +461,7 @@ def collect_number_differences(
             prompt = prompts_dict[symbol]
             input_ids, batch_mask = get_batch_mask(prompt, tokenizer)
 
-            number_diff, first_num, cosine_similarity = perform_intervention_and_generate(
+            number_diff, first_num = perform_intervention_and_generate(
                 random_group_target=random_group,
                 random_target=random_target,
                 r_period=r_period,
@@ -524,15 +481,12 @@ def collect_number_differences(
                 scaler=scaler,
                 y_scaler=y_scaler,
                 pca=pca,
-                config=config,
-                original_logits=original_logits,
-                symbol_index=idx
+                config=config
             )
 
             # Update DataFrames with results
             number_diff_df.at[layer, symbol] = number_diff if number_diff is not None else np.nan
             first_num_df.at[layer, symbol] = first_num if first_num is not None else np.nan
-            similarity_df.at[layer, symbol] = cosine_similarity if cosine_similarity is not None else np.nan
 
         # Save intermediate results after each layer
         number_diff_df.to_csv(config['csv_save_path'])
@@ -541,10 +495,7 @@ def collect_number_differences(
         first_num_df.to_csv(config['csv_save_path_first_num'])
         print(f"Saved first numbers for Layer {layer} to {config['csv_save_path_first_num']}.")
 
-        similarity_df.to_csv(config['csv_save_path_similarity'])
-        print(f"Saved cosine similarities for Layer {layer} to {config['csv_save_path_similarity']}.")
-
-    return number_diff_df, first_num_df, similarity_df
+    return number_diff_df, first_num_df
 
 # ---------------------------- Visualization ---------------------------- #
 
@@ -622,17 +573,7 @@ def main():
     # Load data
     periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods = load_data(CONFIG)
 
-    # Load original logits
-    if not os.path.exists(CONFIG['original_logits_path']):
-        print(f"Original logits file {CONFIG['original_logits_path']} does not exist. Exiting.")
-        return
-    original_logits_tensor = torch.load(CONFIG['original_logits_path'], map_location='cpu')
-    if isinstance(original_logits_tensor, torch.Tensor):
-        original_logits = original_logits_tensor.numpy()
-    else:
-        print("Original logits file does not contain a torch.Tensor. Exiting.")
-        return
-    print(f"Loaded original logits with shape: {original_logits.shape}")
+
 
     # Load model and tokenizer
     hf_token = CONFIG.get("hf_token", "")  # Ensure your Hugging Face token is set if required
@@ -646,14 +587,14 @@ def main():
     y_scaler = StandardScaler()
     pca = PCA(n_components=CONFIG['PCA_COMPONENTS']) if CONFIG['USE_PCA'] else None
 
-    # Collect number differences and cosine similarities
-    number_diff_df, first_num_df, similarity_df = collect_number_differences(
+    # Collect number differences
+    number_diff_df, first_num_df = collect_number_differences(
         periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods,
-        CONFIG, model, tokenizer, scaler, y_scaler, pca, original_logits
+        CONFIG, model, tokenizer, scaler, y_scaler, pca
     )
 
     # Visualize results
-    visualize_results(CONFIG, number_diff_df, similarity_df)
+    visualize_results(CONFIG, number_diff_df, None)
 
 if __name__ == "__main__":
     main()

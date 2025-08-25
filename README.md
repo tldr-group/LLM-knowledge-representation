@@ -2,7 +2,7 @@
 # Layerwise Recall and the Geometry of Interwoven Knowledge in LLMs
 
 This repository contains the official codebase for our paper:  
-**"Layerwise Recall and the Geometry of Interwoven Knowledge in LLMs"**
+**"Do Llamas understand the periodic table?"**
 
 We investigate how large language models (LLMs) encode structured scientific knowledge using chemical elements as a case study. Our key findings include:
 
@@ -11,7 +11,7 @@ We investigate how large language models (LLMs) encode structured scientific kno
 - **Deeper layers** sharpen categorical boundaries and integrate linguistic context.
 - LLMs organize facts as **geometry-aware manifolds**, not just isolated tokens.
 
----
+
 
 ## Repository Structure
 
@@ -40,6 +40,11 @@ Each folder corresponds to a section or concept in the paper:
 
 3. Install dependencies:
    ```bash
+   conda create --name myenv python=3.10
+   conda activate myenv
+   pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
    pip install -r requirements.txt
    ```
+
+
 
