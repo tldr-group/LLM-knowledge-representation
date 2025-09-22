@@ -47,4 +47,16 @@ Each folder corresponds to a section or concept in the paper:
    ```
 
 
+## Hardware compatibility and quantization
 
+- bitsandbytes 4-bit quantization (e.g., `load_in_4bit`, `nf4`) is supported only on Linux with NVIDIA GPUs. It is not supported on macOS (including Apple Silicon) or CPU-only environments.
+- If you are on macOS or on a machine without an NVIDIA GPU:
+  - Disable quantization in configs:
+    - In `config_extract_activation.yaml`, set `extraction.quantization.load_in_4bit: false` (or remove the entire `extraction.quantization` block).
+    - In `config_indirect.yaml`, set `quantization.load_in_4bit: false` if that section is used by your workflow.
+  - Where a script provides a toggle, turn quantization off:
+    - `Geometry/intervention.py`: set `'use_quantization': False` in the config.
+    - `Appendix/entity_attention.py`: set `quantize=False`.
+  - For scripts without a toggle, remove BitsAndBytes-related code or ensure `quantization_config=None` is passed to `from_pretrained`. If running entirely on CPU, you may also set `device_map="cpu"` and reduce batch size.
+
+Note: The repo pins `bitsandbytes` in `requirements.txt`. On macOS/CPU-only, installation or import may fail; you can remove this dependency and disable quantization as above.

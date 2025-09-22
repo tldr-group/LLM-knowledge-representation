@@ -13,7 +13,9 @@ import seaborn as sns
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.ensemble import RandomForestRegressor
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
+import yaml
+import argparse
 
 # ---------------------------- Model Configuration ---------------------------- #
 
@@ -22,41 +24,58 @@ class ModelConfig:
     name: str
     activation_path_template: str  # Use {layer} as placeholder for layer index
     num_layers: int
+    enabled: bool = True
 
-# Example configurations for different models
-MODEL_CONFIGS: List[ModelConfig] = [
+@dataclass
+class Config:
+    """Configuration class to hold all settings from YAML file"""
+    models: List[ModelConfig]
+    experiment: Dict[str, Any]
+    output: Dict[str, Any]
+    training: Dict[str, Any]
+    plotting: Dict[str, Any]
+    comparison: Dict[str, Any]
+    data_processing: Dict[str, Any]
+    logging: Dict[str, Any]
 
-    ModelConfig(
-        name='Llama-2-7b-hf',
-        activation_path_template='activation_datasets/meta-llama-Llama-2-7b-hf/atomic number/atomic number.last.11_templates.{layer}.pt',
-        num_layers=32
-    ),
-
-    ModelConfig(
-        name='Llama-3.1-8B',
-        activation_path_template='activation_datasets/meta-llama-Llama-3.1-8B/atomic number/atomic number.last.11_templates.{layer}.pt',
-        num_layers=32
-    ),
-
-
-    ModelConfig(
-        name='Meta-Llama-3.1-70B',
-        activation_path_template='activation_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number/atomic number.last.11_templates.{layer}.pt',
-        num_layers=80
-    ),
-
-
-]
+def load_config(config_path: str) -> Config:
+    """Load configuration from YAML file"""
+    with open(config_path, 'r') as file:
+        config_data = yaml.safe_load(file)
+    
+    # Convert model configurations to ModelConfig objects
+    models = []
+    for model_data in config_data['models']:
+        if model_data.get('enabled', True):  # Only include enabled models
+            models.append(ModelConfig(
+                name=model_data['name'],
+                activation_path_template=model_data['activation_path_template'],
+                num_layers=model_data['num_layers'],
+                enabled=model_data.get('enabled', True)
+            ))
+    
+    return Config(
+        models=models,
+        experiment=config_data['experiment'],
+        output=config_data['output'],
+        training=config_data['training'],
+        plotting=config_data['plotting'],
+        comparison=config_data['comparison'],
+        data_processing=config_data['data_processing'],
+        logging=config_data['logging']
+    )
 
 # ---------------------------- Global Variables ---------------------------- #
 
-prompt_template_number = 11
+# These will be set from config
+config: Config = None
+prompt_template_number: int = 11
 predictions_dict: Dict[str, Dict[int, Dict[str, np.ndarray]]] = {}  # Nested dict: model -> layer -> predictions
 r2_scores_dict: Dict[str, List[float]] = {}  # Dict: model -> list of R² scores
 
 # ---------------------------- Data Loading and Splitting ---------------------------- #
 
-def load_data(file_path: str, label_column: str = 'Group') -> np.ndarray:
+def load_data(file_path: str, label_column: str = 'Group', missing_fill_value: float = -np.inf) -> np.ndarray:
     """
     Loads the periodic table dataset and returns the labels with missing values filled with -inf.
     
@@ -71,8 +90,8 @@ def load_data(file_path: str, label_column: str = 'Group') -> np.ndarray:
     periodic_table = pd.read_csv(file_path)
     print(f"Loaded dataset with columns: {periodic_table.columns.tolist()}")
     
-    # Fill missing values (NaN) with -inf 
-    labels = periodic_table[label_column].fillna(-np.inf).astype(float).values
+    # Fill missing values (NaN) with configured value
+    labels = periodic_table[label_column].fillna(missing_fill_value).astype(float).values
     
     # Repeat the labels according to the prompt_template_number
     labels_repeated = np.repeat(labels, prompt_template_number)
@@ -124,7 +143,7 @@ def split_data_first_group(labels_repeated: np.ndarray) -> (List[int], List[int]
 
     return train_indices, test_indices
 
-def split_data_group_shuffle(labels_repeated: np.ndarray) -> (List[int], List[int]):
+def split_data_group_shuffle(labels_repeated: np.ndarray, test_size: float = 0.2, random_state: int = 100) -> (List[int], List[int]):
     """
     Splits the data randomly using GroupShuffleSplit, excluding rows with abnormal values.
     
@@ -142,7 +161,7 @@ def split_data_group_shuffle(labels_repeated: np.ndarray) -> (List[int], List[in
     groups = np.repeat(np.arange(len(valid_labels) // prompt_template_number), prompt_template_number)
     
     # Perform group shuffle split
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=100)
+    gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
     train_idx, test_idx = next(gss.split(np.arange(len(valid_labels)), groups=groups))
     
     # Map back to original indices
@@ -151,7 +170,7 @@ def split_data_group_shuffle(labels_repeated: np.ndarray) -> (List[int], List[in
 
     return train_indices.tolist(), test_indices.tolist()
 
-def split_data(labels_repeated: np.ndarray, method: str) -> (List[int], List[int]):
+def split_data(labels_repeated: np.ndarray, method: str, test_size: float = 0.2, random_state: int = 100) -> (List[int], List[int]):
     """
     Splits the data using the specified method.
     
@@ -167,11 +186,11 @@ def split_data(labels_repeated: np.ndarray, method: str) -> (List[int], List[int
     elif method == 'first':
         return split_data_first_group(labels_repeated)
     elif method == 'group_shuffle':
-        return split_data_group_shuffle(labels_repeated)
+        return split_data_group_shuffle(labels_repeated, test_size, random_state)
     else:
         raise ValueError(f"Unknown split method: {method}")
 
-def load_activation_data(layer: int, activation_path_template: str, labels_repeated: np.ndarray, split_method: str = 'middle') -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+def load_activation_data(layer: int, activation_path_template: str, labels_repeated: np.ndarray, split_method: str = 'middle', test_size: float = 0.2, random_state: int = 100, check_consistency: bool = True) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     Loads activation data for a given layer and splits it into train and test sets using a specified method.
     
@@ -191,11 +210,11 @@ def load_activation_data(layer: int, activation_path_template: str, labels_repea
     
     activation_data = torch.load(file_path, weights_only=True).cpu().numpy()
     
-    if activation_data.shape[0] != len(labels_repeated):
+    if check_consistency and activation_data.shape[0] != len(labels_repeated):
         raise ValueError(f"Inconsistent number of samples: {activation_data.shape[0]} features, {len(labels_repeated)} labels.")
     
     # Select the appropriate split method
-    train_indices, test_indices = split_data(labels_repeated, split_method)
+    train_indices, test_indices = split_data(labels_repeated, split_method, test_size, random_state)
 
     X_train, X_test = activation_data[train_indices], activation_data[test_indices]
     y_train, y_test = labels_repeated[train_indices], labels_repeated[test_indices]
@@ -204,7 +223,9 @@ def load_activation_data(layer: int, activation_path_template: str, labels_repea
 
 # ---------------------------- Model Training and Evaluation ---------------------------- #
 
-def train_svr(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> (float, np.ndarray):
+def train_svr(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, 
+              kernel: str = 'linear', c: float = 2, use_sample_weights: bool = True, 
+              weight_method: str = 'balanced', use_scaler: bool = True) -> (float, np.ndarray):
     """
     Trains an SVR model and evaluates its performance using R² score.
     
@@ -216,20 +237,30 @@ def train_svr(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_te
     - r2_svr: R² score of the model.
     - y_pred_svr: Predicted labels for the test set.
     """
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    if use_scaler:
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+    else:
+        X_train_scaled = X_train
+        X_test_scaled = X_test
 
-    sample_weights = compute_sample_weight('balanced', y_train)
-    svr_model = SVR(kernel='linear', C=2)
-    svr_model.fit(X_train_scaled, y_train, sample_weight=sample_weights)
+    svr_model = SVR(kernel=kernel, C=c)
+    
+    if use_sample_weights:
+        sample_weights = compute_sample_weight(weight_method, y_train)
+        svr_model.fit(X_train_scaled, y_train, sample_weight=sample_weights)
+    else:
+        svr_model.fit(X_train_scaled, y_train)
 
     y_pred_svr = svr_model.predict(X_test_scaled)
     r2_svr = r2_score(y_test, y_pred_svr)
 
     return r2_svr, y_pred_svr
 
-def train_svr_cv(X: np.ndarray, y: np.ndarray, n_splits: int = 5) -> (float, np.ndarray):
+def train_svr_cv(X: np.ndarray, y: np.ndarray, n_splits: int = 5, kernel: str = 'linear', 
+                 c: float = 2, use_sample_weights: bool = True, weight_method: str = 'balanced', 
+                 use_scaler: bool = True) -> (float, np.ndarray):
     """
     Trains an SVR model using 5-fold grouped cross-validation where augmented data is kept in the same group.
 
@@ -252,13 +283,21 @@ def train_svr_cv(X: np.ndarray, y: np.ndarray, n_splits: int = 5) -> (float, np.
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
+        if use_scaler:
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+        else:
+            X_train_scaled = X_train
+            X_test_scaled = X_test
 
-        sample_weights = compute_sample_weight('balanced', y_train)
-        svr_model = SVR(kernel='linear', C=2)
-        svr_model.fit(X_train_scaled, y_train, sample_weight=sample_weights)
+        svr_model = SVR(kernel=kernel, C=c)
+        
+        if use_sample_weights:
+            sample_weights = compute_sample_weight(weight_method, y_train)
+            svr_model.fit(X_train_scaled, y_train, sample_weight=sample_weights)
+        else:
+            svr_model.fit(X_train_scaled, y_train)
 
         y_pred = svr_model.predict(X_test_scaled)
         r2 = r2_score(y_test, y_pred)
@@ -269,7 +308,8 @@ def train_svr_cv(X: np.ndarray, y: np.ndarray, n_splits: int = 5) -> (float, np.
     avg_r2 = np.mean(r2_scores)
     return avg_r2, y_pred_all
 
-def train_random_forest(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> (float, np.ndarray):
+def train_random_forest(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray,
+                        n_estimators: int = 100, random_state: int = 42) -> (float, np.ndarray):
     """
     Trains a Random Forest model and evaluates its performance using R² score.
     
@@ -281,7 +321,7 @@ def train_random_forest(X_train: np.ndarray, X_test: np.ndarray, y_train: np.nda
     - r2_rf: R² score of the model.
     - y_pred_rf: Predicted labels for the test set.
     """
-    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    rf_model = RandomForestRegressor(n_estimators=n_estimators, random_state=random_state)
     rf_model.fit(X_train, y_train)
 
     y_pred_rf = rf_model.predict(X_test)
@@ -289,7 +329,8 @@ def train_random_forest(X_train: np.ndarray, X_test: np.ndarray, y_train: np.nda
 
     return r2_rf, y_pred_rf
 
-def train_model(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, method: str = 'svr') -> (float, np.ndarray):
+def train_model(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, 
+                method: str = 'svr', training_config: Dict[str, Any] = None) -> (float, np.ndarray):
     """
     Trains a regression model based on the specified method and evaluates its performance using R² score.
     
@@ -302,18 +343,27 @@ def train_model(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_
     - r2: R² score of the model.
     - y_pred: Predicted labels for the test set.
     """
+    if training_config is None:
+        training_config = {}
+    
     if method == 'svr':
-        return train_svr(X_train, X_test, y_train, y_test)
+        svr_config = training_config.get('svr', {})
+        return train_svr(X_train, X_test, y_train, y_test, **svr_config)
     elif method == 'random_forest':
-        return train_random_forest(X_train, X_test, y_train, y_test)
+        rf_config = training_config.get('random_forest', {})
+        return train_random_forest(X_train, X_test, y_train, y_test, **rf_config)
     elif method == 'svr_cv':
-        return train_svr_cv(X_train, y_train)  # Cross-validation doesn't need X_test/y_test
+        svr_config = training_config.get('svr', {})
+        cv_config = training_config.get('cross_validation', {})
+        n_splits = cv_config.get('n_splits', 5)
+        return train_svr_cv(X_train, y_train, n_splits=n_splits, **svr_config)  # Cross-validation doesn't need X_test/y_test
     else:
         raise ValueError(f"Unknown method: {method}")
 
 # ---------------------------- Plotting Functions ---------------------------- #
 
-def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], label_column: str):
+def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], 
+                                  label_column: str, plotting_config: Dict[str, Any], output_config: Dict[str, Any]):
     """
     Plots R² score trends across normalized layer depth for multiple models and highlights the best layer.
 
@@ -322,14 +372,17 @@ def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models:
     - models: List of ModelConfig instances.
     - label_column: The label used for regression (e.g., 'Atomic Number').
     """
-    output_dir = 'Results/r2_trends_basic'
+    output_dir = output_config.get('results_dir', 'Results/r2_trends_basic')
     os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
     
     # Set plot style
-    plt.figure(figsize=(5, 3))
-    sns.set(style="whitegrid")  # Use seaborn whitegrid style for a cleaner look
+    figsize = plotting_config.get('figure_sizes', {}).get('comparison', [5, 3])
+    plt.figure(figsize=figsize)
+    style = plotting_config.get('style', 'whitegrid')
+    sns.set(style=style)
 
-    colors = sns.color_palette("husl", len(models))  # Generate a color palette with distinct colors
+    palette = plotting_config.get('color_palette', 'husl')
+    colors = sns.color_palette(palette, len(models))
 
     legend_handles = []
 
@@ -366,40 +419,52 @@ def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models:
                                       label=f'{model.name} Best Layer')
         legend_handles.append(best_layer_line)
 
-    # Set y-axis limit from 0 to 1
+    # Set y-axis limit
+    ylim = plotting_config.get('r2_ylim', [0, 1])
     plt.rcParams['text.color'] = 'black'
     plt.rcParams['axes.labelcolor'] = 'black'
     plt.rcParams['xtick.color'] = 'black'
     plt.rcParams['ytick.color'] = 'black'
-    plt.ylim(0, 1)
+    plt.ylim(ylim[0], ylim[1])
     
     # Customize labels and title with label_column
-    plt.xlabel('Layer Depth Proportion', fontsize=14)
-    plt.ylabel('R² Score', fontsize=14)
-    plt.title(f'{label_column}', fontsize=13)
+    font_sizes = plotting_config.get('font_sizes', {})
+    plt.xlabel('Layer Depth Proportion', fontsize=font_sizes.get('xlabel', 14))
+    plt.ylabel('R² Score', fontsize=font_sizes.get('ylabel', 14))
+    plt.title(f'{label_column}', fontsize=font_sizes.get('title', 13))
 
     # Set grid and tick parameters
-    plt.grid(True, which='major', linestyle='--', linewidth=0.7)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    if plotting_config.get('show_grid', True):
+        grid_style = plotting_config.get('grid_style', '--')
+        grid_linewidth = plotting_config.get('grid_linewidth', 0.7)
+        plt.grid(True, which='major', linestyle=grid_style, linewidth=grid_linewidth)
+    plt.xticks(fontsize=font_sizes.get('ticks', 12))
+    plt.yticks(fontsize=font_sizes.get('ticks', 12))
 
     # Save the main plot without the legend
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/r2_trends_comparison_normalized_{label_column}.png', dpi=300, bbox_inches='tight')
+    dpi = plotting_config.get('dpi', 300)
+    if output_config.get('save_comparison_plots', True):
+        plt.savefig(f'{output_dir}/r2_trends_comparison_normalized_{label_column}.png', dpi=dpi, bbox_inches='tight')
     plt.close()
 
     # Create a separate figure for the legend
-    fig_legend = plt.figure(figsize=(12, 1))  # Very wide and short
-    plt.figlegend(handles=legend_handles, loc='center', fontsize=10, ncol=len(legend_handles)//2)
-    fig_legend.savefig(f'{output_dir}/r2_trends_legend_{label_column}.png', dpi=300, bbox_inches='tight')
-    plt.close(fig_legend)
+    if output_config.get('save_legend_separately', True):
+        legend_figsize = plotting_config.get('figure_sizes', {}).get('legend', [12, 1])
+        fig_legend = plt.figure(figsize=legend_figsize)
+        legend_fontsize = font_sizes.get('legend', 10)
+        plt.figlegend(handles=legend_handles, loc='center', fontsize=legend_fontsize, ncol=len(legend_handles)//2)
+        fig_legend.savefig(f'{output_dir}/r2_trends_legend_{label_column}.png', dpi=dpi, bbox_inches='tight')
+        plt.close(fig_legend)
 
 
 
 
 
 
-def plot_results(r2_scores: List[float], predictions_dict: Dict[int, Dict[str, np.ndarray]], best_layer: int, label_column: str, activation_filename: str, model_name: str, model_num_layers: int):
+def plot_results(r2_scores: List[float], predictions_dict: Dict[int, Dict[str, np.ndarray]], best_layer: int, 
+                 label_column: str, activation_filename: str, model_name: str, model_num_layers: int,
+                 plotting_config: Dict[str, Any], output_config: Dict[str, Any]):
     """
     Plots the R² scores and the predictions for the best layer and saves the results with the model name.
 
@@ -416,35 +481,44 @@ def plot_results(r2_scores: List[float], predictions_dict: Dict[int, Dict[str, n
     y_pred_best = predictions_dict[best_layer]['y_pred']
 
     # Create directory for results if it doesn't exist
-    output_dir = 'Results/r2_trends_basic'
+    output_dir = output_config.get('results_dir', 'Results/r2_trends_basic')
     os.makedirs(output_dir, exist_ok=True)
 
     # Define base file name with model name
     base_filename = f'{label_column}_{activation_filename}_layer_{best_layer}_model_{model_name}'
 
     # Plot R² score trends across layers
-    plt.figure(figsize=(5,3))
+    figsize = plotting_config.get('figure_sizes', {}).get('r2_trend', [5, 3])
+    plt.figure(figsize=figsize)
     plt.plot(range(model_num_layers), r2_scores, marker='o', linestyle='-', color='b', label='R² Score')
-    plt.axvline(best_layer, color='r', linestyle='--', label=f'Max R² at Layer {best_layer}')
-    plt.ylim(0, 1)
-    plt.xlabel('Layer Index', fontsize=12)
-    plt.ylabel('R² Score', fontsize=12)
-    plt.title(f'R² Score Trend Across Layers - {model_name}', fontsize=14)
-    plt.grid(True)
+    if plotting_config.get('show_best_layer_line', True):
+        plt.axvline(best_layer, color='r', linestyle='--', label=f'Max R² at Layer {best_layer}')
+    ylim = plotting_config.get('r2_ylim', [0, 1])
+    plt.ylim(ylim[0], ylim[1])
+    font_sizes = plotting_config.get('font_sizes', {})
+    plt.xlabel('Layer Index', fontsize=font_sizes.get('xlabel', 12))
+    plt.ylabel('R² Score', fontsize=font_sizes.get('ylabel', 12))
+    plt.title(f'R² Score Trend Across Layers - {model_name}', fontsize=font_sizes.get('title', 14))
+    if plotting_config.get('show_grid', True):
+        plt.grid(True)
     plt.legend()
-    plt.savefig(f'{output_dir}/{base_filename}_r2_trend.png')
+    if output_config.get('save_individual_plots', True):
+        dpi = plotting_config.get('dpi', 300)
+        plt.savefig(f'{output_dir}/{base_filename}_r2_trend.png', dpi=dpi)
     plt.show()
 
     # Plot prediction results
-    plt.figure(figsize=(18, 6))
+    figsize = plotting_config.get('figure_sizes', {}).get('predictions', [18, 6])
+    plt.figure(figsize=figsize)
 
     # 1. Scatter plot of true vs predicted values
     plt.subplot(1, 3, 1)
     plt.scatter(y_test_best, y_pred_best, color='blue', label='SVR Predictions', alpha=0.7)
     plt.plot([y_test_best.min(), y_test_best.max()], [y_test_best.min(), y_test_best.max()], 'k--', lw=2)
-    plt.xlabel('True Values', fontsize=12)
-    plt.ylabel('Predicted Values', fontsize=12)
-    plt.title(f'SVR (Layer {best_layer}): True vs Predicted - {model_name}', fontsize=14)
+    font_sizes = plotting_config.get('font_sizes', {})
+    plt.xlabel('True Values', fontsize=font_sizes.get('xlabel', 12))
+    plt.ylabel('Predicted Values', fontsize=font_sizes.get('ylabel', 12))
+    plt.title(f'SVR (Layer {best_layer}): True vs Predicted - {model_name}', fontsize=font_sizes.get('title', 14))
     plt.legend()
 
     # 2. Residual plot
@@ -452,27 +526,32 @@ def plot_results(r2_scores: List[float], predictions_dict: Dict[int, Dict[str, n
     residuals_best = y_test_best - y_pred_best
     sns.histplot(residuals_best, kde=True, color='orange', bins=12)
     plt.axvline(0, color='k', linestyle='--', lw=2)
-    plt.xlabel('Residuals', fontsize=12)
-    plt.ylabel('Frequency', fontsize=12)
-    plt.title(f'Residual Distribution (Layer {best_layer}) - {model_name}', fontsize=14)
+    plt.xlabel('Residuals', fontsize=font_sizes.get('xlabel', 12))
+    plt.ylabel('Frequency', fontsize=font_sizes.get('ylabel', 12))
+    plt.title(f'Residual Distribution (Layer {best_layer}) - {model_name}', fontsize=font_sizes.get('title', 14))
 
     # 3. True vs predicted values with error visualization
     plt.subplot(1, 3, 3)
     plt.scatter(np.arange(len(y_test_best)), y_test_best, label='True Values', color='green', alpha=0.6)
     plt.scatter(np.arange(len(y_test_best)), y_pred_best, label='Predicted Values', color='blue', alpha=0.6)
     plt.fill_between(np.arange(len(y_test_best)), y_test_best, y_pred_best, color='gray', alpha=0.3)
-    plt.xlabel('Sample Index', fontsize=12)
-    plt.ylabel('Values', fontsize=12)
-    plt.title(f'True vs Predicted Values (Layer {best_layer}) - {model_name}', fontsize=14)
+    plt.xlabel('Sample Index', fontsize=font_sizes.get('xlabel', 12))
+    plt.ylabel('Values', fontsize=font_sizes.get('ylabel', 12))
+    plt.title(f'True vs Predicted Values (Layer {best_layer}) - {model_name}', fontsize=font_sizes.get('title', 14))
     plt.legend()
 
     # Save the plot
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/{base_filename}_predictions.png')
-    print(f"Saved results for model: {model_name}, layer: {best_layer}")
+    if output_config.get('save_individual_plots', True):
+        dpi = plotting_config.get('dpi', 300)
+        plt.savefig(f'{output_dir}/{base_filename}_predictions.png', dpi=dpi)
+        print(f"Saved results for model: {model_name}, layer: {best_layer}")
     plt.show()
 
-def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], model_pairs: List[Tuple[str, str]], label_column: str):
+def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], 
+                                       model_pairs: List[Tuple[str, str]], label_column: str,
+                                       plotting_config: Dict[str, Any], output_config: Dict[str, Any],
+                                       comparison_config: Dict[str, Any]):
     """
     Plots the R² difference (delta) between pairs of models across normalized layer depth proportion.
 
@@ -482,13 +561,16 @@ def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], mo
     - model_pairs: List of tuples containing pairs of model names to compare.
     - label_column: The label used for regression (e.g., 'Atomic Number').
     """
-    output_dir = 'Results/r2_trends_basic'
+    output_dir = output_config.get('results_dir', 'Results/r2_trends_basic')
     os.makedirs(output_dir, exist_ok=True)
 
-    plt.figure(figsize=(5,3))
-    sns.set(style="whitegrid")
+    figsize = plotting_config.get('figure_sizes', {}).get('comparison', [5, 3])
+    plt.figure(figsize=figsize)
+    style = plotting_config.get('style', 'whitegrid')
+    sns.set(style=style)
 
-    colors = sns.color_palette("husl", len(model_pairs))
+    palette = plotting_config.get('color_palette', 'husl')
+    colors = sns.color_palette(palette, len(model_pairs))
 
     # Create a dictionary to map model names to their configurations
     model_config_dict = {model.name: model for model in models}
@@ -509,7 +591,8 @@ def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], mo
         normalized_layers2 = [layer / num_layers2 for layer in range(len(r2_scores2))]
 
         # Interpolate R² scores onto a common set of normalized layers
-        common_normalized_layers = np.linspace(0, 1, 100)  # 100 points between 0 and 1
+        interpolation_points = comparison_config.get('interpolation_points', 100)
+        common_normalized_layers = np.linspace(0, 1, interpolation_points)
 
         interp_r2_scores1 = np.interp(common_normalized_layers, normalized_layers1, r2_scores1)
         interp_r2_scores2 = np.interp(common_normalized_layers, normalized_layers2, r2_scores2)
@@ -520,59 +603,91 @@ def plot_r2_difference_between_models(r2_scores_dict: Dict[str, List[float]], mo
         plt.plot(common_normalized_layers, delta_r2, marker='o', linestyle='-', color=colors[i],
                  label=f'{model_name1} - {model_name2}', markersize=4, linewidth=1.5)
 
-    plt.xlabel('Layer Depth Proportion', fontsize=14)
-    plt.ylabel('Δ R² Score', fontsize=14)
-    plt.title('R² Difference Between Models Across Normalized Layer Depth', fontsize=13)
-    plt.grid(True, linestyle='--', linewidth=0.7)
-    plt.legend(fontsize=10)
+    font_sizes = plotting_config.get('font_sizes', {})
+    plt.xlabel('Layer Depth Proportion', fontsize=font_sizes.get('xlabel', 14))
+    plt.ylabel('Δ R² Score', fontsize=font_sizes.get('ylabel', 14))
+    plt.title('R² Difference Between Models Across Normalized Layer Depth', fontsize=font_sizes.get('title', 13))
+    if plotting_config.get('show_grid', True):
+        grid_style = plotting_config.get('grid_style', '--')
+        grid_linewidth = plotting_config.get('grid_linewidth', 0.7)
+        plt.grid(True, linestyle=grid_style, linewidth=grid_linewidth)
+    plt.legend(fontsize=font_sizes.get('legend', 10))
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/r2_difference_between_models_{label_column}.png', dpi=300)
+    if output_config.get('save_comparison_plots', True):
+        dpi = plotting_config.get('dpi', 300)
+        plt.savefig(f'{output_dir}/r2_difference_between_models_{label_column}.png', dpi=dpi)
     plt.show()
 
 # ---------------------------- Main Orchestration Function ---------------------------- #
 
-def main(models: List[ModelConfig], methods: List[str], split_method: str = 'middle', label_column: str = 'Group'):
+def main(config: Config):
     """
-    Main function to orchestrate the regression and R² score analysis for multiple models and methods.
+    Main function to orchestrate the regression and R² score analysis using configuration.
 
     Args:
-    - models: List of ModelConfig instances.
-    - methods: List of regression methods to use (e.g., ['svr', 'random_forest', 'svr_cv']).
-    - split_method: The method used to split the data (default: 'middle').
-    - label_column: The column used as the regression target (e.g., 'Group').
+    - config: Configuration object containing all settings.
     """
-    labels_repeated = load_data('periodic_table_dataset.csv', label_column)
+    global prompt_template_number
+    
+    # Extract configuration values
+    models = config.models
+    methods = config.experiment['regression_methods']
+    split_method = config.experiment['split_method']
+    label_column = config.experiment['label_column']
+    dataset_file = config.experiment['dataset_file']
+    prompt_template_number = config.experiment['prompt_template_number']
+    
+    # Load data with configured parameters
+    missing_fill = config.data_processing.get('missing_value_fill', -np.inf)
+    if missing_fill == 'inf':
+        missing_fill = np.inf
+    elif missing_fill == '-inf':
+        missing_fill = -np.inf
+    
+    labels_repeated = load_data(dataset_file, label_column, missing_fill)
 
     for model in models:
         print(f"\nProcessing Model: {model.name}")
         r2_scores_dict[model.name] = []
         predictions_dict[model.name] = {}
-        activation_filename = 'last.11_templates'
+        activation_filename = config.experiment.get('activation_filename', 'last.11_templates')
 
         for layer in range(model.num_layers):
             try:
+                # Get cross-validation config for data splitting
+                cv_config = config.training.get('cross_validation', {})
+                test_size = cv_config.get('test_size', 0.2)
+                random_state = cv_config.get('random_state', 100)
+                check_consistency = config.data_processing.get('check_sample_consistency', True)
+                
                 X_train, X_test, y_train, y_test = load_activation_data(
                     layer=layer,
                     activation_path_template=model.activation_path_template,
                     labels_repeated=labels_repeated,
-                    split_method=split_method
+                    split_method=split_method,
+                    test_size=test_size,
+                    random_state=random_state,
+                    check_consistency=check_consistency
                 )
             except FileNotFoundError as e:
-                print(e)
+                if config.logging.get('print_file_not_found_errors', True):
+                    print(e)
                 continue
             except ValueError as e:
-                print(e)
+                if config.logging.get('print_value_errors', True):
+                    print(e)
                 continue
 
             for method in methods:
-                print(f"Training with method: {method} for model: {model.name}, layer: {layer}")
+                if config.logging.get('print_layer_progress', True):
+                    print(f"Training with method: {method} for model: {model.name}, layer: {layer}")
                 
                 # Check for 'svr_cv' in the methods list
                 if method == 'svr_cv':
-                    r2, y_pred = train_svr_cv(X_train, y_train)  # Only train with CV on the training data
+                    r2, y_pred = train_model(X_train, X_test, y_train, y_test, method=method, training_config=config.training)
                     y_test_to_store = y_train  # Since we're using CV, the "y_test" will be from the full training set
                 else:
-                    r2, y_pred = train_model(X_train, X_test, y_train, y_test, method=method)
+                    r2, y_pred = train_model(X_train, X_test, y_train, y_test, method=method, training_config=config.training)
                     y_test_to_store = y_test  # Regular test data when not using CV
 
                 # Store R² score for the current model and layer
@@ -588,7 +703,8 @@ def main(models: List[ModelConfig], methods: List[str], split_method: str = 'mid
         if r2_scores_dict[model.name]:
             best_layer = np.argmax(r2_scores_dict[model.name])
             best_r2 = np.max(r2_scores_dict[model.name])
-            print(f"Model: {model.name}, Best R² score at layer {best_layer}, Score: {best_r2:.4f}")
+            if config.logging.get('print_best_layer_info', True):
+                print(f"Model: {model.name}, Best R² score at layer {best_layer}, Score: {best_r2:.4f}")
 
             # Plot results for the best layer
             plot_results(
@@ -598,38 +714,48 @@ def main(models: List[ModelConfig], methods: List[str], split_method: str = 'mid
                 label_column=label_column,
                 activation_filename=activation_filename,
                 model_name=model.name,
-                model_num_layers=model.num_layers
+                model_num_layers=model.num_layers,
+                plotting_config=config.plotting,
+                output_config=config.output
             )
         else:
             print(f"No valid R² scores computed for model: {model.name}")
 
     # Plot R² trends across all models
-    plot_r2_trends_across_models(r2_scores_dict, models, label_column)
+    plot_r2_trends_across_models(r2_scores_dict, models, label_column, config.plotting, config.output)
 
-    model_pairs_to_compare = [
-        ('Meta-Llama-3.1-70B', 'Meta-Llama-3.1-70B (question prompt)'),
-        ('Llama-3.1-8B', 'Llama-3.1-8B (question prompt)'),
-        ('Llama-2-7b-hf', 'Llama-2-7b-hf (question prompt)')
-        # Add more model pairs as needed
-    ]
-
-    plot_r2_difference_between_models(r2_scores_dict, models, model_pairs_to_compare, label_column)
+    # Get model pairs from config
+    model_pairs_to_compare = [tuple(pair) for pair in config.comparison.get('model_pairs', [])]
+    
+    if model_pairs_to_compare:
+        plot_r2_difference_between_models(r2_scores_dict, models, model_pairs_to_compare, 
+                                         label_column, config.plotting, config.output, config.comparison)
 
 
 # ---------------------------- Execute the Main Function ---------------------------- #
 
 if __name__ == "__main__":
-    # Define the models to compare with their configurations
-    # Ensure that the activation_path_template contains a '{layer}' placeholder
-    models_to_compare = MODEL_CONFIGS  # List of ModelConfig instances defined above
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Run basic linear regression analysis with configurable parameters')
+    parser.add_argument('--config', '-c', type=str, default='config_linear_regression.yaml',
+                       help='Path to configuration YAML file (default: config_linear_regression.yaml)')
+    args = parser.parse_args()
     
-    # Define the regression methods to use
-    regression_methods = ["svr_cv"]  # Add or remove methods as needed
+    # Load configuration
+    try:
+        config = load_config(args.config)
+        print(f"Loaded configuration from: {args.config}")
+        print(f"Enabled models: {[model.name for model in config.models]}")
+        print(f"Target label: {config.experiment['label_column']}")
+        print(f"Split method: {config.experiment['split_method']}")
+        print(f"Regression methods: {config.experiment['regression_methods']}")
+    except FileNotFoundError:
+        print(f"Configuration file not found: {args.config}")
+        print("Please create a configuration file or specify a valid path using --config")
+        exit(1)
+    except Exception as e:
+        print(f"Error loading configuration: {e}")
+        exit(1)
     
-    # run the main function
-    main(
-        models=models_to_compare,
-        methods=regression_methods,
-        split_method='group_shuffle',  # Options: 'middle', 'first', 'group_shuffle'
-        label_column='Atomic Number'  # Change to desired label column
-    )
+    # Run the main function
+    main(config)

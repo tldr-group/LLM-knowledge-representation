@@ -1,0 +1,159 @@
+# Configuration file for Direct Recall Basic Linear Regression
+# This file contains model configurations, experimental parameters, and training settings
+#
+# USAGE EXAMPLES:
+# 
+# To change the regression method:
+#   experiment.regression_methods: ["svr", "random_forest", "svr_cv"]
+#
+# To adjust the data split method:
+#   experiment.split_method: "group_shuffle"  # Options: middle, first, group_shuffle
+#
+# To change the target label:
+#   experiment.label_column: "Atomic Number"  # or "Group", "Period", etc.
+#
+# To enable/disable specific models:
+#   Set enabled: true/false for each model
+#
+# To add new models, extend the models list with:
+#   - name: "Your Model Name"
+#     activation_path_template: "path/to/activations/{layer}.pt"
+#     num_layers: 32
+#     enabled: true
+
+# Model configurations
+models:
+  - name: "Llama-2-7b-hf"
+    activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/atomic number/atomic number.last.11_templates.{layer}.pt"
+    num_layers: 32
+    enabled: true
+    
+  - name: "Llama-3.1-8B"
+    activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/atomic number/atomic number.last.11_templates.{layer}.pt"
+    num_layers: 32
+    enabled: true
+    
+  - name: "Meta-Llama-3.1-70B"
+    activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number/atomic number.last.11_templates.{layer}.pt"
+    num_layers: 80
+    enabled: true
+
+  # Additional model configurations - currently disabled
+  - name: "Llama-2-7b-hf (question prompt)"
+    activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/atomic number question/atomic number question.last.11_templates_questions.{layer}.pt"
+    num_layers: 32
+    enabled: false
+    
+  - name: "Llama-3.1-8B (question prompt)"
+    activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/atomic number question/atomic number question.last.11_templates_questions.{layer}.pt"
+    num_layers: 32
+    enabled: false
+    
+  - name: "Meta-Llama-3.1-70B (question prompt)"
+    activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number question/atomic number question.last.11_templates_questions.{layer}.pt"
+    num_layers: 80
+    enabled: false
+
+# Experimental parameters
+experiment:
+  # Dataset configuration
+  dataset_file: "periodic_table_dataset.csv"
+  label_column: "Atomic Number"  # Options: "Atomic Number", "Group", "Period", "Atomic Mass", "Electronegativity"
+  
+  # Data splitting configuration
+  split_method: "group_shuffle"  # Options: "middle", "first", "group_shuffle"
+  
+  # Regression methods to use
+  regression_methods: ["svr_cv"]  # Options: "svr", "random_forest", "svr_cv"
+  
+  # Template configuration
+  prompt_template_number: 11
+  activation_filename: "last.11_templates"  # Used for result file naming
+
+# Output settings
+output:
+  results_dir: "Results/r2_trends_basic"
+  save_individual_plots: true
+  save_comparison_plots: true
+  save_legend_separately: true
+
+# Model training parameters
+training:
+  # SVR parameters
+  svr:
+    kernel: "linear"
+    c: 2
+    use_sample_weights: true
+    weight_method: "balanced"
+  
+  # Random Forest parameters
+  random_forest:
+    n_estimators: 100
+    random_state: 42
+  
+  # Cross-validation parameters
+  cross_validation:
+    n_splits: 5
+    random_state: 100
+    test_size: 0.2  # For GroupShuffleSplit
+
+# Plotting configuration
+plotting:
+  # Figure sizes
+  figure_sizes:
+    r2_trend: [5, 3]
+    predictions: [18, 6]
+    comparison: [5, 3]
+    legend: [12, 1]
+  
+  # Style settings
+  style: "whitegrid"  # seaborn style
+  color_palette: "husl"  # Color palette for multiple models
+  dpi: 300
+  
+  # Plot elements
+  show_best_layer_line: true
+  show_grid: true
+  grid_style: "--"
+  grid_linewidth: 0.7
+  
+  # Font sizes
+  font_sizes:
+    xlabel: 14
+    ylabel: 14
+    title: 13
+    ticks: 12
+    legend: 10
+  
+  # Y-axis limits
+  r2_ylim: [0, 1]
+
+# Model comparison settings
+comparison:
+  # Model pairs to compare (for difference plots)
+  model_pairs:
+    - ["Meta-Llama-3.1-70B", "Meta-Llama-3.1-70B (question prompt)"]
+    - ["Llama-3.1-8B", "Llama-3.1-8B (question prompt)"]
+    - ["Llama-2-7b-hf", "Llama-2-7b-hf (question prompt)"]
+  
+  # Interpolation settings for comparison plots
+  interpolation_points: 100  # Number of points for interpolation
+
+# Data processing settings
+data_processing:
+  # How to handle missing values
+  missing_value_fill: -inf  # Value to fill NaN with (use 'inf', '-inf', or numeric value)
+  
+  # Feature scaling
+  use_standard_scaler: true
+  
+  # Validation settings
+  check_sample_consistency: true  # Check if activation samples match label samples
+
+# Logging and debugging
+logging:
+  print_model_progress: true
+  print_layer_progress: true
+  print_best_layer_info: true
+  print_file_not_found_errors: true
+  print_value_errors: true

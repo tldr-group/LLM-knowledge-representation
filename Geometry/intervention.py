@@ -17,6 +17,12 @@ import os
 # ---------------------------- Configuration ---------------------------- #
 
 CONFIG = {
+    # Transformation Configuration
+    'transformation_type': 'polar_3d',  # Choose from: polar_3d, polar_2d, polar_with_period, 
+                                        # unit_circle_3d, unit_circle_period, atomic_only, 
+                                        # cartesian_3d, random_control, random_polar, 
+                                        # scaled_polar, mixed_coordinates
+    
     # PCA Configuration
     'USE_PCA': True,                # Toggle PCA usage
     'PCA_COMPONENTS': 35,           # Number of PCA components
@@ -53,11 +59,188 @@ CONFIG = {
     'num_layers': 80,                # Total number of layers to process
 }
 
+# ---------------------------- Transformation Manager ---------------------------- #
+
+class TransformationManager:
+    """
+    Manages different coordinate transformations for periodic table data.
+    Makes it easy to switch between different transformation strategies.
+    """
+    
+    def __init__(self, transformation_type="polar_3d"):
+        self.transformation_type = transformation_type
+        
+    def get_available_transformations(self):
+        """Return list of available transformation types."""
+        return [
+            "polar_3d",           # r*cos(θ), r*sin(θ), r
+            "polar_2d",           # r*cos(θ), r*sin(θ)
+            "polar_with_period",  # r*cos(θ), r*sin(θ), period
+            "unit_circle_3d",     # cos(θ), sin(θ), r
+            "unit_circle_period", # cos(θ), sin(θ), period
+            "atomic_only",        # atomic_number only
+            "cartesian_3d",       # atomic_number, group, period
+            "random_control",     # random values for control
+            "random_polar",       # random polar coordinates
+            "scaled_polar",       # scaled version with different radius scaling
+            "mixed_coordinates"   # custom mixed coordinate system
+        ]
+    
+    def transform_labels(self, groups, atomic_numbers, periods, random, random_group):
+        """
+        Apply the selected transformation to the input data.
+        
+        Args:
+            groups: Group numbers from periodic table
+            atomic_numbers: Atomic numbers
+            periods: Period numbers
+            random: Random values for control
+            random_group: Random group values
+            
+        Returns:
+            labels_transformed: Transformed coordinates as numpy array
+        """
+        
+        # Common calculations
+        theta = groups * (2 * np.pi / 18)  # Group-based angle
+        theta_atomic = atomic_numbers * (2 * np.pi / 118)  # Atomic number based angle
+        r = atomic_numbers  # Radius based on atomic number
+        
+        # Handle NaN values
+        cos_theta = np.where(np.isfinite(theta), np.cos(theta), np.nan)
+        sin_theta = np.where(np.isfinite(theta), np.sin(theta), np.nan)
+        cos_theta_atomic = np.where(np.isfinite(theta_atomic), np.cos(theta_atomic), np.nan)
+        sin_theta_atomic = np.where(np.isfinite(theta_atomic), np.sin(theta_atomic), np.nan)
+        r = np.where(np.isfinite(r), r, np.nan)
+        
+        if self.transformation_type == "polar_3d":
+            # Default: r*cos(θ), r*sin(θ), r
+            return np.vstack((r * cos_theta, r * sin_theta, r)).T
+            
+        elif self.transformation_type == "polar_2d":
+            # 2D polar: r*cos(θ), r*sin(θ)
+            return np.vstack((r * cos_theta, r * sin_theta)).T
+            
+        elif self.transformation_type == "polar_with_period":
+            # Polar with period: r*cos(θ), r*sin(θ), period
+            return np.vstack((r * cos_theta, r * sin_theta, periods)).T
+            
+        elif self.transformation_type == "unit_circle_3d":
+            # Unit circle with radius: cos(θ), sin(θ), r
+            return np.vstack((cos_theta, sin_theta, r)).T
+            
+        elif self.transformation_type == "unit_circle_period":
+            # Unit circle with period: cos(θ), sin(θ), period
+            return np.vstack((cos_theta, sin_theta, periods)).T
+            
+        elif self.transformation_type == "atomic_only":
+            # Just atomic number
+            return atomic_numbers.reshape(-1, 1)
+            
+        elif self.transformation_type == "cartesian_3d":
+            # Direct cartesian: atomic_number, group, period
+            return np.vstack((r, groups, periods)).T
+            
+        elif self.transformation_type == "random_control":
+            # Random values for control experiments
+            return random.reshape(-1, 1)
+            
+        elif self.transformation_type == "random_polar":
+            # Random polar coordinates
+            random_theta = random_group * (2 * np.pi / 18)
+            return np.vstack((np.cos(random_theta), np.sin(random_theta), r)).T
+            
+        elif self.transformation_type == "scaled_polar":
+            # Scaled polar with different radius scaling
+            alpha = atomic_numbers * (2 * np.pi / 50)
+            return np.vstack((np.cos(alpha), np.sin(theta), np.sqrt(periods))).T
+            
+        elif self.transformation_type == "mixed_coordinates":
+            # Custom mixed coordinate system
+            return np.vstack((groups/np.cos(theta), np.sin(theta), r)).T
+            
+        else:
+            raise ValueError(f"Unknown transformation type: {self.transformation_type}")
+    
+    def get_target_coordinates(self, target_group, target_r, r_period, random_target, random_group_target):
+        """
+        Generate target coordinates for intervention based on the transformation type.
+        
+        Args:
+            target_group: Target group number
+            target_r: Target atomic number (radius)
+            r_period: Target period
+            random_target: Random target value
+            random_group_target: Random group target
+            
+        Returns:
+            linear_target: Target coordinates as numpy array
+        """
+        
+        # Common calculations
+        theta_target = target_group * (2 * np.pi / 18)
+        theta_atomic_target = target_r * (2 * np.pi / 118)
+        
+        if self.transformation_type == "polar_3d":
+            return np.array([target_r * np.cos(theta_target), target_r * np.sin(theta_target), target_r])
+            
+        elif self.transformation_type == "polar_2d":
+            return np.array([target_r * np.cos(theta_target), target_r * np.sin(theta_target)])
+            
+        elif self.transformation_type == "polar_with_period":
+            return np.array([target_r * np.cos(theta_target), target_r * np.sin(theta_target), r_period])
+            
+        elif self.transformation_type == "unit_circle_3d":
+            return np.array([np.cos(theta_target), np.sin(theta_target), target_r])
+            
+        elif self.transformation_type == "unit_circle_period":
+            return np.array([np.cos(theta_target), np.sin(theta_target), r_period])
+            
+        elif self.transformation_type == "atomic_only":
+            return np.array([target_r])
+            
+        elif self.transformation_type == "cartesian_3d":
+            return np.array([target_r, target_group, r_period])
+            
+        elif self.transformation_type == "random_control":
+            return np.array([random_target])
+            
+        elif self.transformation_type == "random_polar":
+            random_theta_target = random_group_target * (2 * np.pi / 18)
+            return np.array([np.cos(random_theta_target), np.sin(random_theta_target), target_r])
+            
+        elif self.transformation_type == "scaled_polar":
+            alpha_target = target_r * (2 * np.pi / 50)
+            return np.array([np.cos(alpha_target), np.sin(theta_target), np.sqrt(r_period)])
+            
+        elif self.transformation_type == "mixed_coordinates":
+            return np.array([target_group/np.cos(theta_target), np.sin(theta_target), target_r])
+            
+        else:
+            raise ValueError(f"Unknown transformation type: {self.transformation_type}")
+    
+    def get_description(self):
+        """Return a description of the current transformation."""
+        descriptions = {
+            "polar_3d": "3D polar coordinates: [r*cos(θ), r*sin(θ), r] where θ=group*(2π/18), r=atomic_number",
+            "polar_2d": "2D polar coordinates: [r*cos(θ), r*sin(θ)] where θ=group*(2π/18), r=atomic_number",
+            "polar_with_period": "Polar with period: [r*cos(θ), r*sin(θ), period] where θ=group*(2π/18), r=atomic_number",
+            "unit_circle_3d": "Unit circle with radius: [cos(θ), sin(θ), r] where θ=group*(2π/18), r=atomic_number",
+            "unit_circle_period": "Unit circle with period: [cos(θ), sin(θ), period] where θ=group*(2π/18)",
+            "atomic_only": "Atomic number only: [atomic_number]",
+            "cartesian_3d": "Direct cartesian: [atomic_number, group, period]",
+            "random_control": "Random control: [random_value]",
+            "random_polar": "Random polar: [cos(random_θ), sin(random_θ), r] where random_θ=random_group*(2π/18)",
+            "scaled_polar": "Scaled polar: [cos(α), sin(θ), √period] where α=atomic_number*(2π/50), θ=group*(2π/18)",
+            "mixed_coordinates": "Mixed coordinates: [group/cos(θ), sin(θ), r] where θ=group*(2π/18)"
+        }
+        return descriptions.get(self.transformation_type, "Unknown transformation")
+
 # ---------------------------- Data Loading and Label Transformation ---------------------------- #
 
 def load_data(config):
     """
-    Load and preprocess the periodic table data.
+    Load and preprocess the periodic table data using the transformation manager.
     """
     periodic_table = pd.read_csv(config['file_path'])
     print(f"Loaded dataset columns: {periodic_table.columns.tolist()}")
@@ -70,35 +253,19 @@ def load_data(config):
     random = labels_original[:, 3]
     random_group = labels_original[:, 4]
 
-    theta = groups * (2 * np.pi / 18)
-    # theta  = atomic_numbers * (2 * np.pi / 18)
-    r = atomic_numbers
+    # Initialize transformation manager
+    transform_manager = TransformationManager(config['transformation_type'])
+    print(f"Using transformation: {config['transformation_type']}")
+    print(f"Description: {transform_manager.get_description()}")
 
-    cos_theta = np.cos(theta)
-    sin_theta = np.sin(theta)
+    # Apply the selected transformation
+    labels_transformed = transform_manager.transform_labels(
+        groups, atomic_numbers, periods, random, random_group
+    )
+    
+    print(f"Transformed labels shape: {labels_transformed.shape}")
 
-    cos_theta = np.where(np.isfinite(theta), cos_theta, np.nan)
-    sin_theta = np.where(np.isfinite(theta), sin_theta, np.nan)
-    r = np.where(np.isfinite(r), r, np.nan)
-
-
-
-    # labels_transformed = np.vstack((r * cos_theta, r * sin_theta, periods)).T
-    # labels_transformed = np.vstack((atomic_numbers))
-    # # labels_transformed = np.vstack((r*cos_theta, r*sin_theta)).T
-    labels_transformed = np.vstack((r*cos_theta, r*sin_theta, r)).T
-    # labels_transformed = np.vstack((cos_theta, sin_theta, periods)).T
-    # alpha = atomic_numbers*(2 * np.pi / 50)
-    # labels_transformed = np.vstack((np.cos(alpha), np.sin(theta), np.sqrt(periods))).T
-    # labels_transformed = np.vstack((group/np.cos(theta), np.sin(theta), r)).T
-
-    # labels_transformed = np.vstack((random))
-    # random_theta = random_group * (2 * np.pi / 18)
-    # labels_transformed = np.vstack((np.cos(random_theta), np.sin(random_theta), r)).T
-    # labels_transformed = np.vstack((r, groups, periods)).T
-    # labels_transformed = np.vstack((r * cos_theta, r * sin_theta, r)).T
-
-    return periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods
+    return periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods, transform_manager
 
 # ---------------------------- Model Loading ---------------------------- #
 
@@ -193,7 +360,7 @@ def perform_intervention_and_generate(
     random_group_target, random_target, r_period, r_target, layer, symbol, target_group, target_r,
     model, tokenizer, input_ids, batch_mask, device,
     periodic_table, labels_transformed, activation_file_template,
-    scaler, y_scaler, pca, config
+    scaler, y_scaler, pca, config, transform_manager
 ):
     """
     Perform intervention on activations and generate text.
@@ -257,24 +424,11 @@ def perform_intervention_and_generate(
         print(f"Layer {layer}: Error extracting weights or intercepts: {e}. Skipping layer.")
         return None, None, None
 
-    theta_target = target_group * (2 * np.pi / 18)
-    # theta_target = target_r * (2 * np.pi / 18)
-    # random_theta_target = random_group_target * (2 * np.pi / 18)
-
-    # linear_target = np.array([r_target * np.cos(theta_target), r_target * np.sin(theta_target), r_period])
-    # linear_target = np.array([r_target])
-    # linear_target = np.array([r_target * np.cos(theta_target), r_target * np.sin(theta_target)])
-    linear_target = np.array([r_target * np.cos(theta_target), r_target * np.sin(theta_target), r_target])
-    # linear_target = np.array([np.cos(theta_target), np.sin(theta_target), r_period])
-    # alpha_target = r_target*(2 * np.pi / 50)
-    # linear_target = np.array([np.cos(alpha_target), np.sin(theta_target), np.sqrt(r_period)])
-    # linear_target = np.array([random_target])
-
-    # linear_target = np.array([np.cos(random_theta_target), np.sin(random_theta_target), r_target])
-
-    # linear_target = np.array([r_target, target_group, r_period])
-    # linear_target = np.array([r_target * np.cos(theta_target), r_target * np.sin(theta_target), r_target])
-    # linear_target = np.array([np.cos(theta_target), np.sin(theta_target), 10*r_period])
+    # Automatically generate linear_target using the transformation manager
+    linear_target = transform_manager.get_target_coordinates(
+        target_group, r_target, r_period, random_target, random_group_target
+    )
+    print(f"Layer {layer}, Symbol {symbol}: Generated linear_target: {linear_target}")
 
 
     x_average = np.mean(X, axis=0, keepdims=True)
@@ -400,7 +554,7 @@ def perform_intervention_and_generate(
 
 def collect_number_differences(
     periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods,
-    config, model, tokenizer, scaler, y_scaler, pca
+    config, model, tokenizer, scaler, y_scaler, pca, transform_manager
 ):
     """
     Iterate through layers and symbols to collect number differences.
@@ -481,7 +635,8 @@ def collect_number_differences(
                 scaler=scaler,
                 y_scaler=y_scaler,
                 pca=pca,
-                config=config
+                config=config,
+                transform_manager=transform_manager
             )
 
             # Update DataFrames with results
@@ -567,13 +722,91 @@ def visualize_results(config, number_diff_df, similarity_df):
         plt.savefig("results_linear/average_cosine_similarity_per_layer.png")
         plt.show()
 
+# ---------------------------- Helper Functions for Easy Experimentation ---------------------------- #
+
+def list_available_transformations():
+    """List all available transformation types with descriptions."""
+    manager = TransformationManager()
+    print("Available transformation types:")
+    print("=" * 50)
+    for transform_type in manager.get_available_transformations():
+        temp_manager = TransformationManager(transform_type)
+        print(f"{transform_type:20} - {temp_manager.get_description()}")
+    print("=" * 50)
+
+def quick_test_transformation(transformation_type, test_data=None):
+    """
+    Quickly test a transformation with sample data.
+    
+    Args:
+        transformation_type: The transformation type to test
+        test_data: Optional tuple of (groups, atomic_numbers, periods, random, random_group)
+                  If None, uses sample data
+    """
+    if test_data is None:
+        # Sample data for testing
+        groups = np.array([1, 2, 13, 14, 15, 16, 17, 18])
+        atomic_numbers = np.array([1, 3, 5, 6, 7, 8, 9, 10])
+        periods = np.array([1, 2, 2, 2, 2, 2, 2, 2])
+        random = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+        random_group = np.array([5, 7, 2, 8, 12, 4, 9, 1])
+    else:
+        groups, atomic_numbers, periods, random, random_group = test_data
+    
+    manager = TransformationManager(transformation_type)
+    print(f"\nTesting transformation: {transformation_type}")
+    print(f"Description: {manager.get_description()}")
+    
+    # Transform labels
+    labels_transformed = manager.transform_labels(groups, atomic_numbers, periods, random, random_group)
+    print(f"Input shape: groups({len(groups)}), atomic_numbers({len(atomic_numbers)}), periods({len(periods)})")
+    print(f"Output shape: {labels_transformed.shape}")
+    print(f"Sample transformed data (first 3 rows):")
+    print(labels_transformed[:3])
+    
+    # Test target coordinate generation
+    target_coords = manager.get_target_coordinates(
+        target_group=1, target_r=1, r_period=1, 
+        random_target=0.5, random_group_target=3
+    )
+    print(f"Sample target coordinates: {target_coords}")
+    print("-" * 50)
+
+def run_transformation_comparison(config_updates=None):
+    """
+    Run a comparison of different transformations on the same data.
+    
+    Args:
+        config_updates: Dictionary of config updates to apply
+    """
+    if config_updates is None:
+        config_updates = {}
+    
+    # Update config
+    test_config = CONFIG.copy()
+    test_config.update(config_updates)
+    
+    # Test a few key transformations
+    test_transformations = ['polar_3d', 'polar_2d', 'unit_circle_3d', 'atomic_only', 'cartesian_3d']
+    
+    print("Transformation Comparison")
+    print("=" * 60)
+    
+    for transform_type in test_transformations:
+        test_config['transformation_type'] = transform_type
+        try:
+            periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods, transform_manager = load_data(test_config)
+            print(f"{transform_type:20} - Shape: {labels_transformed.shape}, Valid samples: {(~np.isnan(labels_transformed).any(axis=1)).sum()}")
+        except Exception as e:
+            print(f"{transform_type:20} - ERROR: {e}")
+    
+    print("=" * 60)
+
 # ---------------------------- Main Function ---------------------------- #
 
 def main():
     # Load data
-    periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods = load_data(CONFIG)
-
-
+    periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods, transform_manager = load_data(CONFIG)
 
     # Load model and tokenizer
     hf_token = CONFIG.get("hf_token", "")  # Ensure your Hugging Face token is set if required
@@ -590,7 +823,7 @@ def main():
     # Collect number differences
     number_diff_df, first_num_df = collect_number_differences(
         periodic_table, labels_transformed, symbols, groups, atomic_numbers, periods,
-        CONFIG, model, tokenizer, scaler, y_scaler, pca
+        CONFIG, model, tokenizer, scaler, y_scaler, pca, transform_manager
     )
 
     # Visualize results

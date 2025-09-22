@@ -2,22 +2,26 @@ import json
 import os
 import torch
 import einops
+import yaml
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import pandas as pd
 
 # Load configuration and model parameters
-def load_config(config_file="config.json"):
+def load_config(config_file="config_extract_activation.yaml"):
     """
     Load the configuration file.
 
     Args:
-        config_file (str): Path to the configuration JSON file.
+        config_file (str): Path to the configuration YAML file.
 
     Returns:
         dict: Configuration data.
     """
-    with open(config_file) as f:
-        return json.load(f)
+    with open(config_file, 'r') as f:
+        if config_file.endswith('.yaml') or config_file.endswith('.yml'):
+            return yaml.safe_load(f)
+        else:
+            return json.load(f)
 
 def load_tokenizer(model_name, hf_token):
     """
@@ -34,22 +38,31 @@ def load_tokenizer(model_name, hf_token):
     tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
-def load_model(model_name, hf_token):
+def load_model(model_name, hf_token, quantization_config):
     """
     Load the pre-trained model with quantization configuration.
 
     Args:
         model_name (str): Name of the pre-trained model.
         hf_token (str): Hugging Face token.
+        quantization_config (dict): Quantization configuration parameters.
 
     Returns:
         AutoModelForCausalLM: Loaded model.
     """
+    # Convert string dtype to torch dtype
+    dtype_map = {
+        "float16": torch.float16,
+        "float32": torch.float32,
+        "bfloat16": torch.bfloat16
+    }
+    compute_dtype = dtype_map.get(quantization_config.get("bnb_4bit_compute_dtype", "float16"), torch.float16)
+    
     bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=False,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16
+        load_in_4bit=quantization_config.get("load_in_4bit", True),
+        bnb_4bit_use_double_quant=quantization_config.get("bnb_4bit_use_double_quant", False),
+        bnb_4bit_quant_type=quantization_config.get("bnb_4bit_quant_type", "nf4"),
+        bnb_4bit_compute_dtype=compute_dtype
     )
     torch.cuda.empty_cache()
     model = AutoModelForCausalLM.from_pretrained(
@@ -324,297 +337,58 @@ def generate_prompts(df, templates):
 
 # Main processing function
 def main():
+    """
+    Main function to extract activations from language models.
+    
+    Configuration is loaded from config_extract_activation.yaml file. Key settings include:
+    - extraction.model_name: Which model to use
+    - extraction.batch_size: Batch size for processing
+    - extraction.aggregation: How to aggregate token activations
+    - extraction.save_dir: Directory to save activation files
+    - extraction.quantization: Model quantization parameters
+    - extraction.entities: List of entity types and their templates
+    
+    To change any of these settings, edit the config_extract_activation.yaml file.
+    """
     # Load configuration
     config_data = load_config()
     HF_TOKEN = config_data.get("HF_TOKEN")
     
-    # Define model name
-    # model_name = config_data.get("MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B")
-    # model_name = "meta-llama/Meta-Llama-3.1-70B"
-    # model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
-    model_name = "meta-llama/Llama-2-7b-hf"
-    # model_name = "meta-llama/Llama-3.1-8B"
-
+    # Get extraction configuration
+    extraction_config = config_data.get("extraction", {})
+    model_name = extraction_config.get("model_name", "meta-llama/Llama-2-7b-hf")
+    batch_size = extraction_config.get("batch_size", 550)
+    aggregation = extraction_config.get("aggregation", "last")
+    base_save_dir = extraction_config.get("save_dir", "activation_datasets_2")
+    quantization_config = extraction_config.get("quantization", {})
+    entities = extraction_config.get("entities", [])
+    
+    print(f"Using model: {model_name}")
+    print(f"Batch size: {batch_size}")
+    print(f"Aggregation method: {aggregation}")
+    print(f"Save directory: {base_save_dir}")
     
     # Load tokenizer and model
     tokenizer = load_tokenizer(model_name, HF_TOKEN)
-    model = load_model(model_name, HF_TOKEN)
+    model = load_model(model_name, HF_TOKEN, quantization_config)
     
-    # Define entity types with their data files and templates
-    entities = [
-        {
-            "entity_type": "atomic number",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "{Element Name} ({Symbol}) has an atomic number of ",
-                "The atomic number of {Element Name} ({Symbol}) is ",
-                "For {Element Name} ({Symbol}), the atomic number is ",
-                "{Element Name} ({Symbol}) has the atomic number ",
-                "{Element Name} ({Symbol}) holds an atomic number of ",
-                "{Element Name} ({Symbol}) is assigned the atomic number ",
-                "For {Element Name} ({Symbol}), it is known that the atomic number is ",
-                "In terms of atomic numbers, {Element Name} ({Symbol}) is assigned ",
-                "{Element Name} ({Symbol}) has an assigned atomic number of ",
-                "The atomic number for {Element Name} ({Symbol}) is known to be ",
-                "When it comes to atomic numbers, {Element Name} ({Symbol}) has "
-            ],
-            "prompt_name": "11_templates"
-        },
-        {
-            "entity_type": "atomic mass",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "{Element Name} ({Symbol}) has an atomic mass of ",
-                "The atomic mass of {Element Name} ({Symbol}) is ",
-                "For {Element Name} ({Symbol}), the atomic mass is ",
-                "{Element Name} ({Symbol}) has the atomic mass ",
-                "{Element Name} ({Symbol}) holds an atomic mass of ",
-                "{Element Name} ({Symbol}) is assigned the atomic mass ",
-                "For {Element Name} ({Symbol}), it is known that the atomic mass is ",
-                "In terms of atomic masses, {Element Name} ({Symbol}) is assigned ",
-                "{Element Name} ({Symbol}) has an assigned atomic mass of ",
-                "The atomic mass for {Element Name} ({Symbol}) is known to be ",
-                "When it comes to atomic masses, {Element Name} ({Symbol}) has "
-            ],
-            "prompt_name": "11_templates"
-        },
-        {
-            "entity_type": "group",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "{Element Name} ({Symbol}) belongs to group ",
-                "The element {Element Name} ({Symbol}) is part of group ",
-                "In the periodic table, {Element Name} ({Symbol}) is found in group ",
-                "{Element Name} ({Symbol}) is assigned to group ",
-                "For {Element Name} ({Symbol}), the group number is ",
-                "{Element Name} ({Symbol}) can be classified under group ",
-                "When categorized, {Element Name} ({Symbol}) is placed in group ",
-                "In terms of groups, {Element Name} ({Symbol}) falls under group ",
-                "You will find {Element Name} ({Symbol}) in group ",
-                "The group for {Element Name} ({Symbol}) in the periodic table is ",
-                "According to the periodic table, {Element Name} ({Symbol}) is in group "
-            ],
-            "prompt_name": "11_templates"
-        },
-        {
-            "entity_type": "period",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "{Element Name} ({Symbol}) is located in period ",
-                "The element {Element Name} ({Symbol}) belongs to period ",
-                "In the periodic table, {Element Name} ({Symbol}) is found in period ",
-                "{Element Name} ({Symbol}) falls under period ",
-                "{Element Name} ({Symbol}) is assigned to period ",
-                "For {Element Name} ({Symbol}), the period number is ",
-                "The element {Element Name} ({Symbol}) is categorized under period ",
-                "{Element Name} ({Symbol}) can be found in period ",
-                "In terms of periods, {Element Name} ({Symbol}) is placed in period ",
-                "According to the periodic table, {Element Name} ({Symbol}) is in period ",
-                "You will find {Element Name} ({Symbol}) in period "
-            ],
-            "prompt_name": "11_templates"
-        },
-        {
-            "entity_type": "electronegativity",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "{Element Name} ({Symbol}) has an electronegativity of ",
-                "The element {Element Name} ({Symbol}) has an electronegativity of ",
-                "In the periodic table, {Element Name} ({Symbol}) is assigned an electronegativity of ",
-                "{Element Name} ({Symbol}) possesses an electronegativity of ",
-                "{Element Name} ({Symbol}) is assigned an electronegativity of ",
-                "For {Element Name} ({Symbol}), the electronegativity value is ",
-                "The element {Element Name} ({Symbol}) has been assigned an electronegativity of ",
-                "{Element Name} ({Symbol}) can be found with an electronegativity of ",
-                "In terms of electronegativity, {Element Name} ({Symbol}) has a value of ",
-                "According to the periodic table, {Element Name} ({Symbol}) has an electronegativity of ",
-                "You will find {Element Name} ({Symbol}) with an electronegativity of "
-            ],
-            "prompt_name": "11_templates"
-        },
-        {
-            "entity_type": "atomic number question",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "What is the atomic number of {Element Name} ({Symbol})?",
-                "Do you know the atomic number of {Element Name} ({Symbol})?",
-                "Can you tell me the atomic number of {Element Name} ({Symbol})?",
-                "What number is {Element Name} ({Symbol}) on the periodic table?",
-                "How high is the atomic number of {Element Name} ({Symbol})?",
-                "What position does {Element Name} ({Symbol}) hold in atomic number?",
-                "Where does {Element Name} ({Symbol}) rank in atomic number?",
-                "Do you happen to know {Element Name} ({Symbol})'s atomic number?",
-                "Can you guess the atomic number of {Element Name} ({Symbol})?",
-                "What's the atomic number of {Element Name} ({Symbol})?",
-                "Which atomic number is assigned to {Element Name} ({Symbol})?"
-            ],
-            "prompt_name": "11_templates_questions"
-        },
-        {
-            "entity_type": "period question",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "Which period is {Element Name} ({Symbol}) located in?",
-                "Do you know which period {Element Name} ({Symbol}) belongs to?",
-                "In the periodic table, what period is {Element Name} ({Symbol}) found in?",
-                "Can you tell me which period {Element Name} ({Symbol}) falls under?",
-                "What period is {Element Name} ({Symbol}) assigned to?",
-                "For {Element Name} ({Symbol}), what is the period number?",
-                "Which period is the element {Element Name} ({Symbol}) categorized under?",
-                "Where can {Element Name} ({Symbol}) be found in terms of periods?",
-                "What period is {Element Name} ({Symbol}) placed in?",
-                "According to the periodic table, which period is {Element Name} ({Symbol}) in?",
-                "Can you tell me in which period {Element Name} ({Symbol}) is located?"
-            ],
-            "prompt_name": "11_templates_questions"
-        },
-        
-        {
-            "entity_type": "group question",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "Which group does {Element Name} ({Symbol}) belong to?",
-                "Do you know which group {Element Name} ({Symbol}) is part of?",
-                "In the periodic table, what group is {Element Name} ({Symbol}) found in?",
-                "Can you tell me which group {Element Name} ({Symbol}) is assigned to?",
-                "What is the group number for {Element Name} ({Symbol})?",
-                "Under which group can {Element Name} ({Symbol}) be classified?",
-                "When categorized, in which group is {Element Name} ({Symbol}) placed?",
-                "In terms of groups, which group does {Element Name} ({Symbol}) fall under?",
-                "Where can you find {Element Name} ({Symbol}) in terms of groups?",
-                "What is the group for {Element Name} ({Symbol}) in the periodic table?",
-                "According to the periodic table, what group is {Element Name} ({Symbol}) in?"
-            ],
-            "prompt_name": "11_templates_questions"
-        },
-        {
-            "entity_type": "atomic mass question",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "What is the atomic mass of {Element Name} ({Symbol})?",
-                "Do you know the atomic mass of {Element Name} ({Symbol})?",
-                "What is the atomic mass for {Element Name} ({Symbol})?",
-                "Can you tell me the atomic mass of {Element Name} ({Symbol})?",
-                "What atomic mass is assigned to {Element Name} ({Symbol})?",
-                "What is the atomic mass value for {Element Name} ({Symbol})?",
-                "What is known about the atomic mass of {Element Name} ({Symbol})?",
-                "In terms of atomic mass, what is {Element Name} ({Symbol}) assigned?",
-                "What atomic mass has been assigned to {Element Name} ({Symbol})?",
-                "What is the known atomic mass for {Element Name} ({Symbol})?",
-                "When it comes to atomic mass, what value does {Element Name} ({Symbol}) have?"
-            ],
-            "prompt_name": "11_templates_questions"
-        },
-        {
-            "entity_type": "electronegativity question",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "What is the electronegativity of {Element Name} ({Symbol})?",
-                "Do you know the electronegativity of {Element Name} ({Symbol})?",
-                "What is the electronegativity assigned to {Element Name} ({Symbol}) in the periodic table?",
-                "Can you tell me the electronegativity of {Element Name} ({Symbol})?",
-                "What electronegativity value is assigned to {Element Name} ({Symbol})?",
-                "What is the electronegativity value for {Element Name} ({Symbol})?",
-                "What electronegativity has been assigned to {Element Name} ({Symbol})?",
-                "Where can you find {Element Name} ({Symbol}) in terms of electronegativity?",
-                "In terms of electronegativity, what value does {Element Name} ({Symbol}) have?",
-                "According to the periodic table, what is the electronegativity of {Element Name} ({Symbol})?",
-                "Can you find the electronegativity of {Element Name} ({Symbol})?"
-            ],
-            "prompt_name": "11_templates_questions"
-        },
-        
-
-        {
-            "entity_type": "numebr_test",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-              "In numbers, the Arabic numeral for {Number}",
-            ],
-            "prompt_name": "1_templates"
-        },
-        
-        {
-            "entity_type": "atomic number_single",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the atomic number of {Symbol}",
-            ],
-            "prompt_name": "1_templates"
-        },
-
-        {
-            "entity_type": "atomic number_relationship",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the atomic number of {Symbol} is ",
-            ],
-            "prompt_name": "1_templates"
-        },
-
-
-        {
-            "entity_type": "atomic mass_relationship",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the atomic mass of {Symbol} is ",
-            ],
-            "prompt_name": "1_templates"
-        },
-
-
-
-        {
-            "entity_type": "group_relationship",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the group of {Symbol} is ",
-            ],
-            "prompt_name": "1_templates"
-        },
-
-        {
-            "entity_type": "period_relationship",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the period of {Symbol} is ",
-            ],
-            "prompt_name": "1_templates"
-        },
-
-        {
-            "entity_type": "electronegativity_relationship",
-            "data_file":"periodic_table_dataset.csv",
-            "templates": [
-              "In the periodic table, the electronegativity of {Symbol}",
-            ],
-            "prompt_name": "1_templates"
-        },
-                                
-        {
-            "entity_type": "element",
-            "data_file": "periodic_table_dataset.csv",
-            "templates": [
-                "Element {Element Name} {Symbol}",
-                "In the periodic table, {Element Name} {Symbol}",
-                "{Element Name} {Symbol}",
-                "In chemistry, {Element Name} {Symbol}",
-                "The symbol {Symbol} represents {Element Name}",
-                "{Element Name} with symbol {Symbol}",
-                "{Symbol} is short for {Element Name}",
-                "Identified as {Element Name} {Symbol}",
-                "The chemical notation {Symbol} stands for {Element Name}",
-                "“{Element Name}, abbreviated as {Symbol}",
-                "{Symbol}, also called {Element Name}"
-            ],
-            "prompt_name": "11_templates"
-        },
-    ]
+    # Validate entities configuration
+    if not entities:
+        print("No entities found in configuration. Please check your config_extract_activation.yaml file.")
+        return
     
-    # Define save directory
-    base_save_dir = "activation_datasets_2"
+    print(f"Found {len(entities)} entity types in configuration.")
     
-    # Iterate over each entity type
+    # Use entities from configuration
+    
+    # Remove hardcoded entities list - now using configuration
+    # The following entities are now defined in config_extract_activation.yaml under extraction.entities:
+    # - atomic number, atomic mass, group, period, electronegativity (with various templates)
+    # - question variants for each property type
+    # - relationship templates and single templates
+    # - element templates
+    
+    # Process each entity type from configuration
     for entity in entities:
         entity_type = entity["entity_type"]
         data_file = entity["data_file"]
@@ -633,11 +407,8 @@ def main():
         prompts = generate_prompts(df, templates)
         print(f"Generated {len(prompts)} prompts for entity type '{entity_type}'.")
         
-        # Define batch size
-        batch_size = 550 # Adjust based on GPU memory
-        
-        # Define aggregation method
-        aggregation = 'last'  # Can be 'last', 'mean', 'max', 'none'
+        # Use configured values
+        # batch_size, aggregation, and base_save_dir are now from configuration
         
         # Define number of layers (assuming model has 'n_layers' layers)
         # Alternatively, determine from the model
