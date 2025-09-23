@@ -46,17 +46,39 @@ Each folder corresponds to a section or concept in the paper:
    pip install -r requirements.txt
    ```
 
+4. Datasets
+This project uses **activation_datasets**.
+- Location: `./activation_datasets/` (project root)
 
-## Hardware compatibility and quantization
+### Extracting Residual Stream Yourself
+Edit the configuration file: config_extract_activation.yaml
+Run the script:
+  ```bash
+  python Pre/extract_activations.py
+  ```
+### Download from Hugging Face
+  ```bash
+  huggingface-cli download leige1114/activation_datasets \
+  --repo-type dataset \
+  --local-dir activation_datasets \
+  --local-dir-use-symlinks False
+  ```
 
-- bitsandbytes 4-bit quantization (e.g., `load_in_4bit`, `nf4`) is supported only on Linux with NVIDIA GPUs. It is not supported on macOS (including Apple Silicon) or CPU-only environments.
-- If you are on macOS or on a machine without an NVIDIA GPU:
-  - Disable quantization in configs:
-    - In `config_extract_activation.yaml`, set `extraction.quantization.load_in_4bit: false` (or remove the entire `extraction.quantization` block).
-    - In `config_indirect.yaml`, set `quantization.load_in_4bit: false` if that section is used by your workflow.
-  - Where a script provides a toggle, turn quantization off:
-    - `Geometry/intervention.py`: set `'use_quantization': False` in the config.
-    - `Appendix/entity_attention.py`: set `quantize=False`.
-  - For scripts without a toggle, remove BitsAndBytes-related code or ensure `quantization_config=None` is passed to `from_pretrained`. If running entirely on CPU, you may also set `device_map="cpu"` and reduce batch size.
+## Hardware Compatibility & Quantization
 
-Note: The repo pins `bitsandbytes` in `requirements.txt`. On macOS/CPU-only, installation or import may fail; you can remove this dependency and disable quantization as above.
+- **bitsandbytes 4-bit quantization** (`load_in_4bit`, `nf4`) is only supported on **Linux with NVIDIA GPUs**.  
+  It does **not** work on **macOS (including Apple Silicon)** or **CPU-only** setups.
+
+### If you don’t have an NVIDIA GPU:
+- **Disable quantization in configs:**
+  - `config_extract_activation.yaml`: set `extraction.quantization.load_in_4bit: false` (or remove the whole block).  
+  - `config_indirect.yaml`: set `quantization.load_in_4bit: false` if used.
+- **Disable quantization in scripts:**
+  - `Geometry/intervention.py`: `'use_quantization': False`  
+  - `Appendix/entity_attention.py`: `quantize=False`
+- **For scripts without a toggle:**  
+  Remove BitsAndBytes-related code, or pass `quantization_config=None`.  
+  On CPU, you can also use `device_map="cpu"` and reduce batch size.
+
+ **Note:** `requirements.txt` pins `bitsandbytes`.  
+On macOS/CPU-only, installation may fail—remove the dependency and keep quantization disabled.
