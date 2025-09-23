@@ -37,9 +37,8 @@ CONFIG = {
     # 'activation_file_template': 'activation_datasets/meta-llama-Meta-Llama-3.1-70B/numebr_test/numebr_test.last.1_templates.layer_{layer}.pt',
 
     # Output Paths
-    'csv_save_path': "results_linear/number_difference_per_layer.csv",
-    'csv_save_path_first_num': "results_linear/first_number_per_layer.csv",
-    'csv_save_path_similarity': "results_linear/cosine_similarity_per_layer.csv",  # New CSV for cosine similarities
+    'csv_save_path': "Results/intevention/number_difference_per_layer.csv",
+    'csv_save_path_first_num': "Results/intevention/first_number_per_layer.csv",
 
     # Model Configuration
     'model_name': "meta-llama/Meta-Llama-3.1-70B",
@@ -582,8 +581,8 @@ def collect_number_differences(
 
 
     # Create output directory if it doesn't exist
-    if not os.path.exists("results_linear"):
-        os.makedirs("results_linear")
+    if not os.path.exists("Results/intevention"):
+        os.makedirs("Results/intevention")
 
 
 
@@ -654,9 +653,9 @@ def collect_number_differences(
 
 # ---------------------------- Visualization ---------------------------- #
 
-def visualize_results(config, number_diff_df, similarity_df):
+def visualize_results(config, number_diff_df):
     """
-    Generate heatmap and line plots for the collected number differences and cosine similarities.
+    Generate heatmap and line plots for the collected number differences.
     """
     if os.path.exists(config['csv_save_path']):
         number_diff_df = pd.read_csv(config['csv_save_path'], index_col=0)
@@ -665,11 +664,6 @@ def visualize_results(config, number_diff_df, similarity_df):
         print(f"CSV file {config['csv_save_path']} not found. Exiting visualization.")
         return
 
-    if os.path.exists(config['csv_save_path_similarity']):
-        similarity_df = pd.read_csv(config['csv_save_path_similarity'], index_col=0)
-        print(f"Loaded cosine similarities from {config['csv_save_path_similarity']}.")
-    else:
-        print(f"CSV file {config['csv_save_path_similarity']} not found. Skipping cosine similarity visualization.")
 
     number_diff_df = number_diff_df.astype(float)
 
@@ -681,7 +675,7 @@ def visualize_results(config, number_diff_df, similarity_df):
     plt.ylabel('Layer')
     plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig("results_linear/intervention_number_difference_heatmap.png")
+    plt.savefig("Results/intevention/intervention_number_difference_heatmap.png")
     plt.show()
 
     # Line Plot for Average Number Difference
@@ -694,33 +688,9 @@ def visualize_results(config, number_diff_df, similarity_df):
     plt.ylabel('Average Number Difference')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("results_linear/average_number_difference_per_layer.png")
+    plt.savefig("Results/intevention/average_number_difference_per_layer.png")
     plt.show()
 
-    # Heatmap for Cosine Similarities (if available)
-    if 'similarity_df' in locals() and not similarity_df.empty:
-        plt.figure(figsize=(20, 15))
-        sns.heatmap(similarity_df, annot=True, fmt=".4f", cmap='viridis', cbar_kws={'label': 'Cosine Similarity'})
-        plt.title('Cosine Similarity of Last Token Logits per Layer and Element')
-        plt.xlabel('Element Symbol')
-        plt.ylabel('Layer')
-        plt.yticks(rotation=0)
-        plt.tight_layout()
-        plt.savefig("results_linear/cosine_similarity_heatmap.png")
-        plt.show()
-
-        # Line Plot for Average Cosine Similarity
-        average_similarity_per_layer = similarity_df.mean(axis=1)
-
-        plt.figure(figsize=(12, 6))
-        sns.lineplot(x=average_similarity_per_layer.index, y=average_similarity_per_layer.values, marker='o', color='green')
-        plt.title('Average Cosine Similarity per Layer')
-        plt.xlabel('Layer')
-        plt.ylabel('Average Cosine Similarity')
-        plt.grid(True)
-        plt.tight_layout()
-        plt.savefig("results_linear/average_cosine_similarity_per_layer.png")
-        plt.show()
 
 # ---------------------------- Helper Functions for Easy Experimentation ---------------------------- #
 
@@ -827,7 +797,7 @@ def main():
     )
 
     # Visualize results
-    visualize_results(CONFIG, number_diff_df, None)
+    visualize_results(CONFIG, number_diff_df)
 
 if __name__ == "__main__":
     main()

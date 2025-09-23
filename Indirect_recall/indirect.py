@@ -183,46 +183,17 @@ def train_model(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_
 
 # ---------------------------- Plotting Functions ---------------------------- #
 
-# COLOR_MAP = {
-#     'Llama-2-7b-hf (question prompt)': '#e377c2',         
-#     'Llama-2-7b-hf (continuation prompt)': '#f7c9e2',     
-#     'Llama-3.1-8B (question prompt)': '#2ca02c',           
-#     'Llama-3.1-8B (continuation prompt)': '#98df8a',       
-#     'Meta-Llama-3.1-70B (question prompt)': '#1f77b4',     
-#     'Meta-Llama-3.1-70B (continuation prompt)': '#aec7e8'  
-# }
-
-# STYLE_MAP = {
-#     'Llama-2-7b-hf': '-',
-#     'Llama-2-7b-hf (question prompt)': '-',
-#     'Llama-3.1-8B (continuation prompt)': '-',
-#     'Llama-3.1-8B (question prompt)': '-',
-#     'Meta-Llama-3.1-70B (continuation prompt)': '-',
-#     'Meta-Llama-3.1-70B (question prompt)': '-'
-# }
-
-COLOR_MAP = {
-    'Llama-2-7b-hf (Non-matching prompt)': '#e377c2',     
-    'Llama-2-7b-hf': '#f7c9e2',    
-    'Llama-3.1-8B (Non-matching prompt)': '#2ca02c',         
-    'Llama-3.1-8B': '#98df8a',      
-    'Meta-Llama-3.1-70B (Non-matching prompt)': '#1f77b4',     
-    'Meta-Llama-3.1-70B': '#aec7e8'  
-}
-
-STYLE_MAP = {
-    'Llama-2-7b-hf': '-',
-    'Llama-2-7b-hf (Non-matching prompt)': '-',
-    'Llama-3.1-8B': '-',
-    'Llama-3.1-8B (Non-matching prompt)': '-',
-    'Meta-Llama-3.1-70B ': '-',
-    'Meta-Llama-3.1-70B (Non-matching prompt)': '-'
-}
-
-def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], label_column: str, output_dir: str = 'Results/non_matching'):
+def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models: List[ModelConfig], label_column: str, output_dir: str = 'Results/non_matching', config: Dict[str, Any] = None):
     os.makedirs(output_dir, exist_ok=True)
     plt.figure(figsize=(5, 3))
     sns.set(style="whitegrid")
+
+    # Get plotting configuration
+    plotting_config = config.get('plotting', {}) if config else {}
+    color_map = plotting_config.get('color_map', {})
+    style_map = plotting_config.get('style_map', {})
+    default_color = plotting_config.get('default_color', 'gray')
+    default_style = plotting_config.get('default_style', '-')
 
     legend_handles = []
 
@@ -237,8 +208,8 @@ def plot_r2_trends_across_models(r2_scores_dict: Dict[str, List[float]], models:
             print(f"Error: mismatch for {model.name}. Skipping.")
             continue
 
-        color = COLOR_MAP.get(model.name, 'gray')
-        line_style = STYLE_MAP.get(model.name, '-')
+        color = color_map.get(model.name, default_color)
+        line_style = style_map.get(model.name, default_style)
         line, = plt.plot(
             normalized_layers, r2_scores,
             marker='o', linestyle=line_style, color=color,
@@ -337,7 +308,7 @@ def main(config: Dict[str, Any], models: List[ModelConfig] = None, methods: List
         else:
             print(f"No valid R² for model: {model.name}")
 
-    plot_r2_trends_across_models(r2_scores_dict, models, label_column, output_dir)
+    plot_r2_trends_across_models(r2_scores_dict, models, label_column, output_dir, config)
 
 def parse_arguments():
     """Parse command line arguments."""

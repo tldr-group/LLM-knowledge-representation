@@ -359,7 +359,7 @@ def main():
     model_name = extraction_config.get("model_name", "meta-llama/Llama-2-7b-hf")
     batch_size = extraction_config.get("batch_size", 550)
     aggregation = extraction_config.get("aggregation", "last")
-    base_save_dir = extraction_config.get("save_dir", "activation_datasets_2")
+    base_save_dir = extraction_config.get("save_dir", "activation_datasets")
     quantization_config = extraction_config.get("quantization", {})
     entities = extraction_config.get("entities", [])
     

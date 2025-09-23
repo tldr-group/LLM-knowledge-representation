@@ -28,27 +28,27 @@ models:
   - name: "Llama-2-7b-hf (question prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/group question/group question.last.11_templates_questions.{layer}.pt"
     num_layers: 32
-    enabled: false
+    enabled: true
     
   - name: "Llama-3.1-8B (continuation prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt"
     num_layers: 32
-    enabled: false
+    enabled: true
     
   - name: "Llama-3.1-8B (question prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/group question/group question.last.11_templates_questions.{layer}.pt"
     num_layers: 32
-    enabled: false
+    enabled: true
     
   - name: "Meta-Llama-3.1-70B (continuation prompt)"
     activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt"
     num_layers: 80
-    enabled: false
-    
+    enabled: true
+
   - name: "Meta-Llama-3.1-70B (question prompt)"
     activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/group question/group question.last.11_templates_questions.{layer}.pt"
     num_layers: 80
-    enabled: false
+    enabled: true
     
   - name: "Llama-2-7b-hf (Matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates.{layer}.pt"
@@ -58,42 +58,42 @@ models:
   - name: "Llama-2-7b-hf (Non-matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/group/group.last.11_templates.{layer}.pt"
     num_layers: 32
-    enabled: true
-    
+    enabled: false
+
   - name: "Llama-3.1-8B (Matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/group/group.last.11_templates.{layer}.pt"
     num_layers: 32
-    enabled: true
+    enabled: false
     
   - name: "Llama-3.1-8B (Non-matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/atomic number/atomic number.last.11_templates.{layer}.pt"
     num_layers: 32
-    enabled: true
+    enabled: false
     
   - name: "Meta-Llama-3.1-70B (Matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/group/group.last.11_templates.{layer}.pt"
     num_layers: 80
-    enabled: true
-    
+    enabled: false
+
   - name: "Meta-Llama-3.1-70B (Non-matching prompt)"
     activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/atomic number/atomic number.last.11_templates.{layer}.pt"
     num_layers: 80
-    enabled: true
+    enabled: false
 
   - name: "Llama-2-7b-hf (No-mention prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-2-7b-hf/element/element.last.11_templates.layer_{layer}.pt"
     num_layers: 32
-    enabled: true
+    enabled: false
 
   - name: "Llama-3.1-8B (No-mention prompt)"
     activation_path_template: "activation_datasets/meta-llama-Llama-3.1-8B/element/element.last.11_templates.layer_{layer}.pt"
     num_layers: 32
-    enabled: true
+    enabled: false
 
   - name: "Meta-Llama-3.1-70B (No-mention prompt)"
     activation_path_template: "activation_datasets/meta-llama-Meta-Llama-3.1-70B/element/element.last.11_templates.layer_{layer}.pt"
     num_layers: 32
-    enabled: true
+    enabled: false
   
 
 
@@ -118,243 +118,38 @@ training:
   cv_splits: 5
   cv_random_state: 100
 
-# Activation extraction settings
-extraction:
-  # Model configuration
-  model_name: "meta-llama/Llama-2-7b-hf"
-  # Alternative models:
-  # - "meta-llama/Meta-Llama-3.1-70B"
-  # - "meta-llama/Meta-Llama-3-8B-Instruct"
-  # - "meta-llama/Llama-3.1-8B"
+# Plotting configuration
+plotting:
+  color_map:
+    "Llama-2-7b-hf (Non-matching prompt)": "#e377c2"
+    "Llama-2-7b-hf (Matching prompt)": "#f7c9e2"
+    "Llama-3.1-8B (Non-matching prompt)": "#2ca02c"
+    "Llama-3.1-8B (Matching prompt)": "#98df8a"
+    "Meta-Llama-3.1-70B (Non-matching prompt)": "#1f77b4"
+    "Meta-Llama-3.1-70B (Matching prompt)": "#aec7e8"
+    # Alternative color scheme for question/continuation prompts
+    "Llama-2-7b-hf (question prompt)": "#e377c2"
+    "Llama-2-7b-hf (continuation prompt)": "#f7c9e2"
+    "Llama-3.1-8B (question prompt)": "#2ca02c"
+    "Llama-3.1-8B (continuation prompt)": "#98df8a"
+    "Meta-Llama-3.1-70B (question prompt)": "#1f77b4"
+    "Meta-Llama-3.1-70B (continuation prompt)": "#aec7e8"
   
-  # Processing parameters
-  batch_size: 550
-  aggregation: "last"  # Options: "last", "mean", "max", "none"
-  save_dir: "activation_datasets_2"
+  style_map:
+    "Llama-2-7b-hf (Matching prompt)": "-"
+    "Llama-2-7b-hf (Non-matching prompt)": "-"
+    "Llama-3.1-8B (Matching prompt)": "-"
+    "Llama-3.1-8B (Non-matching prompt)": "-"
+    "Meta-Llama-3.1-70B (Matching prompt)": "-"
+    "Meta-Llama-3.1-70B (Non-matching prompt)": "-"
+    # Alternative style scheme for question/continuation prompts
+    "Llama-2-7b-hf (question prompt)": "-"
+    "Llama-2-7b-hf (continuation prompt)": "-"
+    "Llama-3.1-8B (question prompt)": "-"
+    "Llama-3.1-8B (continuation prompt)": "-"
+    "Meta-Llama-3.1-70B (question prompt)": "-"
+    "Meta-Llama-3.1-70B (continuation prompt)": "-"
   
-  # Quantization configuration
-  quantization:
-    load_in_4bit: true
-    bnb_4bit_use_double_quant: false
-    bnb_4bit_quant_type: "nf4"
-    bnb_4bit_compute_dtype: "float16"  # Will be converted to torch.float16
-  
-  # Entity types and their templates
-  entities:
-    - entity_type: "atomic number"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "{Element Name} ({Symbol}) has an atomic number of "
-        - "The atomic number of {Element Name} ({Symbol}) is "
-        - "For {Element Name} ({Symbol}), the atomic number is "
-        - "{Element Name} ({Symbol}) has the atomic number "
-        - "{Element Name} ({Symbol}) holds an atomic number of "
-        - "{Element Name} ({Symbol}) is assigned the atomic number "
-        - "For {Element Name} ({Symbol}), it is known that the atomic number is "
-        - "In terms of atomic numbers, {Element Name} ({Symbol}) is assigned "
-        - "{Element Name} ({Symbol}) has an assigned atomic number of "
-        - "The atomic number for {Element Name} ({Symbol}) is known to be "
-        - "When it comes to atomic numbers, {Element Name} ({Symbol}) has "
-    
-    - entity_type: "atomic mass"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "{Element Name} ({Symbol}) has an atomic mass of "
-        - "The atomic mass of {Element Name} ({Symbol}) is "
-        - "For {Element Name} ({Symbol}), the atomic mass is "
-        - "{Element Name} ({Symbol}) has the atomic mass "
-        - "{Element Name} ({Symbol}) holds an atomic mass of "
-        - "{Element Name} ({Symbol}) is assigned the atomic mass "
-        - "For {Element Name} ({Symbol}), it is known that the atomic mass is "
-        - "In terms of atomic masses, {Element Name} ({Symbol}) is assigned "
-        - "{Element Name} ({Symbol}) has an assigned atomic mass of "
-        - "The atomic mass for {Element Name} ({Symbol}) is known to be "
-        - "When it comes to atomic masses, {Element Name} ({Symbol}) has "
-    
-    - entity_type: "group"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "{Element Name} ({Symbol}) belongs to group "
-        - "The element {Element Name} ({Symbol}) is part of group "
-        - "In the periodic table, {Element Name} ({Symbol}) is found in group "
-        - "{Element Name} ({Symbol}) is assigned to group "
-        - "For {Element Name} ({Symbol}), the group number is "
-        - "{Element Name} ({Symbol}) can be classified under group "
-        - "When categorized, {Element Name} ({Symbol}) is placed in group "
-        - "In terms of groups, {Element Name} ({Symbol}) falls under group "
-        - "You will find {Element Name} ({Symbol}) in group "
-        - "The group for {Element Name} ({Symbol}) in the periodic table is "
-        - "According to the periodic table, {Element Name} ({Symbol}) is in group "
-    
-    - entity_type: "period"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "{Element Name} ({Symbol}) is located in period "
-        - "The element {Element Name} ({Symbol}) belongs to period "
-        - "In the periodic table, {Element Name} ({Symbol}) is found in period "
-        - "{Element Name} ({Symbol}) falls under period "
-        - "{Element Name} ({Symbol}) is assigned to period "
-        - "For {Element Name} ({Symbol}), the period number is "
-        - "The element {Element Name} ({Symbol}) is categorized under period "
-        - "{Element Name} ({Symbol}) can be found in period "
-        - "In terms of periods, {Element Name} ({Symbol}) is placed in period "
-        - "According to the periodic table, {Element Name} ({Symbol}) is in period "
-        - "You will find {Element Name} ({Symbol}) in period "
-    
-    - entity_type: "electronegativity"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "{Element Name} ({Symbol}) has an electronegativity of "
-        - "The element {Element Name} ({Symbol}) has an electronegativity of "
-        - "In the periodic table, {Element Name} ({Symbol}) is assigned an electronegativity of "
-        - "{Element Name} ({Symbol}) possesses an electronegativity of "
-        - "{Element Name} ({Symbol}) is assigned an electronegativity of "
-        - "For {Element Name} ({Symbol}), the electronegativity value is "
-        - "The element {Element Name} ({Symbol}) has been assigned an electronegativity of "
-        - "{Element Name} ({Symbol}) can be found with an electronegativity of "
-        - "In terms of electronegativity, {Element Name} ({Symbol}) has a value of "
-        - "According to the periodic table, {Element Name} ({Symbol}) has an electronegativity of "
-        - "You will find {Element Name} ({Symbol}) with an electronegativity of "
-    
-    - entity_type: "atomic number question"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates_questions"
-      templates:
-        - "What is the atomic number of {Element Name} ({Symbol})?"
-        - "Do you know the atomic number of {Element Name} ({Symbol})?"
-        - "Can you tell me the atomic number of {Element Name} ({Symbol})?"
-        - "What number is {Element Name} ({Symbol}) on the periodic table?"
-        - "How high is the atomic number of {Element Name} ({Symbol})?"
-        - "What position does {Element Name} ({Symbol}) hold in atomic number?"
-        - "Where does {Element Name} ({Symbol}) rank in atomic number?"
-        - "Do you happen to know {Element Name} ({Symbol})'s atomic number?"
-        - "Can you guess the atomic number of {Element Name} ({Symbol})?"
-        - "What's the atomic number of {Element Name} ({Symbol})?"
-        - "Which atomic number is assigned to {Element Name} ({Symbol})?"
-    
-    - entity_type: "period question"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates_questions"
-      templates:
-        - "Which period is {Element Name} ({Symbol}) located in?"
-        - "Do you know which period {Element Name} ({Symbol}) belongs to?"
-        - "In the periodic table, what period is {Element Name} ({Symbol}) found in?"
-        - "Can you tell me which period {Element Name} ({Symbol}) falls under?"
-        - "What period is {Element Name} ({Symbol}) assigned to?"
-        - "For {Element Name} ({Symbol}), what is the period number?"
-        - "Which period is the element {Element Name} ({Symbol}) categorized under?"
-        - "Where can {Element Name} ({Symbol}) be found in terms of periods?"
-        - "What period is {Element Name} ({Symbol}) placed in?"
-        - "According to the periodic table, which period is {Element Name} ({Symbol}) in?"
-        - "Can you tell me in which period {Element Name} ({Symbol}) is located?"
-    
-    - entity_type: "group question"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates_questions"
-      templates:
-        - "Which group does {Element Name} ({Symbol}) belong to?"
-        - "Do you know which group {Element Name} ({Symbol}) is part of?"
-        - "In the periodic table, what group is {Element Name} ({Symbol}) found in?"
-        - "Can you tell me which group {Element Name} ({Symbol}) is assigned to?"
-        - "What is the group number for {Element Name} ({Symbol})?"
-        - "Under which group can {Element Name} ({Symbol}) be classified?"
-        - "When categorized, in which group is {Element Name} ({Symbol}) placed?"
-        - "In terms of groups, which group does {Element Name} ({Symbol}) fall under?"
-        - "Where can you find {Element Name} ({Symbol}) in terms of groups?"
-        - "What is the group for {Element Name} ({Symbol}) in the periodic table?"
-        - "According to the periodic table, what group is {Element Name} ({Symbol}) in?"
-    
-    - entity_type: "atomic mass question"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates_questions"
-      templates:
-        - "What is the atomic mass of {Element Name} ({Symbol})?"
-        - "Do you know the atomic mass of {Element Name} ({Symbol})?"
-        - "What is the atomic mass for {Element Name} ({Symbol})?"
-        - "Can you tell me the atomic mass of {Element Name} ({Symbol})?"
-        - "What atomic mass is assigned to {Element Name} ({Symbol})?"
-        - "What is the atomic mass value for {Element Name} ({Symbol})?"
-        - "What is known about the atomic mass of {Element Name} ({Symbol})?"
-        - "In terms of atomic mass, what is {Element Name} ({Symbol}) assigned?"
-        - "What atomic mass has been assigned to {Element Name} ({Symbol})?"
-        - "What is the known atomic mass for {Element Name} ({Symbol})?"
-        - "When it comes to atomic mass, what value does {Element Name} ({Symbol}) have?"
-    
-    - entity_type: "electronegativity question"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates_questions"
-      templates:
-        - "What is the electronegativity of {Element Name} ({Symbol})?"
-        - "Do you know the electronegativity of {Element Name} ({Symbol})?"
-        - "What is the electronegativity assigned to {Element Name} ({Symbol}) in the periodic table?"
-        - "Can you tell me the electronegativity of {Element Name} ({Symbol})?"
-        - "What electronegativity value is assigned to {Element Name} ({Symbol})?"
-        - "What is the electronegativity value for {Element Name} ({Symbol})?"
-        - "What electronegativity has been assigned to {Element Name} ({Symbol})?"
-        - "Where can you find {Element Name} ({Symbol}) in terms of electronegativity?"
-        - "In terms of electronegativity, what value does {Element Name} ({Symbol}) have?"
-        - "According to the periodic table, what is the electronegativity of {Element Name} ({Symbol})?"
-        - "Can you find the electronegativity of {Element Name} ({Symbol})?"
-    
-    - entity_type: "numebr_test"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In numbers, the Arabic numeral for {Number}"
-    
-    - entity_type: "atomic number_single"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the atomic number of {Symbol}"
-    
-    - entity_type: "atomic number_relationship"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the atomic number of {Symbol} is "
-    
-    - entity_type: "atomic mass_relationship"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the atomic mass of {Symbol} is "
-    
-    - entity_type: "group_relationship"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the group of {Symbol} is "
-    
-    - entity_type: "period_relationship"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the period of {Symbol} is "
-    
-    - entity_type: "electronegativity_relationship"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "1_templates"
-      templates:
-        - "In the periodic table, the electronegativity of {Symbol}"
-    
-    - entity_type: "element"
-      data_file: "periodic_table_dataset.csv"
-      prompt_name: "11_templates"
-      templates:
-        - "Element {Element Name} {Symbol}"
-        - "In the periodic table, {Element Name} {Symbol}"
-        - "{Element Name} {Symbol}"
-        - "In chemistry, {Element Name} {Symbol}"
-        - "The symbol {Symbol} represents {Element Name}"
-        - "{Element Name} with symbol {Symbol}"
-        - "{Symbol} is short for {Element Name}"
-        - "Identified as {Element Name} {Symbol}"
-        - "The chemical notation {Symbol} stands for {Element Name}"
-        - "{Element Name}, abbreviated as {Symbol}"
-        - "{Symbol}, also called {Element Name}"
+  default_color: "gray"
+  default_style: "-"
+
