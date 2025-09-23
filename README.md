@@ -46,23 +46,26 @@ Each folder corresponds to a section or concept in the paper:
    pip install -r requirements.txt
    ```
 
-4. Datasets
-This project uses **activation_datasets**.
-- Location: `./activation_datasets/` (project root)
+4. **Datasets**
 
-**Extracting Residual Stream Yourself**
-Edit the configuration file: config_extract_activation.yaml
-Run the script:
-  ```bash
-  python Pre/extract_activations.py
-  ```
-**Download from Hugging Face**
-  ```bash
-  huggingface-cli download leige1114/activation_datasets \
-  --repo-type dataset \
-  --local-dir activation_datasets \
-  --local-dir-use-symlinks False
-  ```
+   This project uses **activation_datasets** located at `./activation_datasets/` (project root).
+
+   You can obtain the datasets in two ways:
+
+   **Option A: Extract Residual Stream Yourself**
+   1. Edit the configuration file: `config_extract_activation.yaml`
+   2. Run the extraction script:
+      ```bash
+      python Pre/extract_activations.py
+      ```
+
+   **Option B: Download from Hugging Face**
+   ```bash
+   huggingface-cli download leige1114/activation_datasets \
+   --repo-type dataset \
+   --local-dir activation_datasets \
+   --local-dir-use-symlinks False
+   ```
 
 ## Hardware Compatibility & Quantization
 
