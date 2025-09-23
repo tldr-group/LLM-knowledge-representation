@@ -50,13 +50,13 @@ Each folder corresponds to a section or concept in the paper:
 This project uses **activation_datasets**.
 - Location: `./activation_datasets/` (project root)
 
-### Extracting Residual Stream Yourself
+**Extracting Residual Stream Yourself**
 Edit the configuration file: config_extract_activation.yaml
 Run the script:
   ```bash
   python Pre/extract_activations.py
   ```
-### Download from Hugging Face
+**Download from Hugging Face**
   ```bash
   huggingface-cli download leige1114/activation_datasets \
   --repo-type dataset \
